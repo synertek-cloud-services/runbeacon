@@ -1,0 +1,11 @@
+name = "runbeacon"
+pages_build_output_dir = "dist"
+
+[vars]
+RESEND_FROM_EMAIL = "hello@runbeacon.net"
+TEAM_NOTIFY_EMAIL = "jeremys@codenexus.org"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "runbeacon-db"
+database_id = "509aef3f-58a4-4f8e-b7cb-9fb3b8d221ed"

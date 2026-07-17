@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RunBeacon — RMM without the per-endpoint tax</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0d12;
+    --surface: #12161d;
+    --surface-2: #171c24;
+    --border: #1e242c;
+    --text: #f2f4f7;
+    --text-dim: #9aa5b1;
+    --text-faint: #5b6470;
+    --amber: #ffa23c;
+    --amber-dim: #7a5426;
+    --teal: #3ddbd9;
+    --dot: #2a323d;
+    --dot-lit: var(--amber);
+    --success-bg: rgba(61, 219, 217, 0.1);
+  }
+
+  [data-theme="light"] {
+    --bg: #faf9f6;
+    --surface: #ffffff;
+    --surface-2: #f3f2ee;
+    --border: #e4e2dc;
+    --text: #14171c;
+    --text-dim: #5b6470;
+    --text-faint: #8b93a0;
+    --amber: #d97a1f;
+    --amber-dim: #f3d9b8;
+    --teal: #128a87;
+    --dot: #dedad2;
+    --dot-lit: var(--amber);
+    --success-bg: rgba(18, 138, 135, 0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  h1, h2, h3, .display {
+    font-family: 'Space Grotesk', sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  a { color: inherit; text-decoration: none; }
+
+  /* ---------- Nav ---------- */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px clamp(20px, 5vw, 64px);
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .logo-mark {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--amber);
+    box-shadow: 0 0 0 4px var(--amber-dim), 0 0 16px 2px var(--amber);
+    animation: pulse-mark 2.4s ease-in-out infinite;
+  }
+
+  @keyframes pulse-mark {
+    0%, 100% { box-shadow: 0 0 0 4px var(--amber-dim), 0 0 16px 2px var(--amber); }
+    50% { box-shadow: 0 0 0 7px var(--amber-dim), 0 0 22px 4px var(--amber); }
+  }
+
+  .nav-right { display: flex; align-items: center; gap: 18px; }
+
+  .theme-toggle {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-dim);
+  }
+  .theme-toggle:hover { color: var(--text); border-color: var(--text-faint); }
+  .theme-toggle svg { width: 16px; height: 16px; }
+
+  .nav-cta {
+    font-size: 13px;
+    font-weight: 500;
+    padding: 9px 16px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+  .nav-cta:hover { border-color: var(--text-faint); color: var(--text); }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative;
+    padding: clamp(60px, 10vw, 120px) clamp(20px, 5vw, 64px) 80px;
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .radar-field {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    display: grid;
+    grid-template-columns: repeat(24, 1fr);
+    gap: clamp(14px, 2vw, 26px);
+    padding: 40px clamp(20px, 5vw, 64px);
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, black 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, black 30%, transparent 75%);
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  .rdot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--dot);
+    justify-self: center;
+    align-self: center;
+  }
+
+  .rdot.lit {
+    background: var(--dot-lit);
+    box-shadow: 0 0 6px 1px var(--dot-lit);
+  }
+
+  .hero-content { position: relative; z-index: 1; max-width: 760px; }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--amber);
+    background: var(--amber-dim);
+    border: 1px solid color-mix(in srgb, var(--amber) 35%, transparent);
+    padding: 6px 12px;
+    border-radius: 20px;
+    margin-bottom: 28px;
+  }
+
+  .hero h1 {
+    font-size: clamp(38px, 6vw, 68px);
+    font-weight: 600;
+    line-height: 1.06;
+    margin-bottom: 22px;
+  }
+
+  .hero h1 .accent { color: var(--amber); }
+
+  .hero p.sub {
+    font-size: clamp(16px, 2vw, 19px);
+    color: var(--text-dim);
+    max-width: 560px;
+    margin: 0 auto 40px;
+    line-height: 1.6;
+  }
+
+  /* ---------- Signup ---------- */
+  .signup-form {
+    display: flex;
+    gap: 10px;
+    max-width: 440px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .signup-form input[type="email"] {
+    flex: 1;
+    min-width: 240px;
+    padding: 13px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+  }
+
+  .signup-form input[type="email"]:focus {
+    outline: 2px solid var(--amber);
+    outline-offset: 1px;
+  }
+
+  .signup-form input::placeholder { color: var(--text-faint); }
+
+  .btn-primary {
+    padding: 13px 22px;
+    border-radius: 8px;
+    border: none;
+    background: var(--amber);
+    color: #14100a;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn-primary:hover { box-shadow: 0 0 0 4px var(--amber-dim); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+  .form-note {
+    font-size: 12.5px;
+    color: var(--text-faint);
+    margin-top: 14px;
+  }
+
+  .success-msg {
+    display: none;
+    max-width: 440px;
+    margin: 0 auto;
+    padding: 14px 18px;
+    border-radius: 8px;
+    background: var(--success-bg);
+    border: 1px solid color-mix(in srgb, var(--teal) 35%, transparent);
+    color: var(--teal);
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  /* ---------- Divider stat strip ---------- */
+  .stat-strip {
+    display: flex;
+    justify-content: center;
+    gap: clamp(24px, 6vw, 72px);
+    flex-wrap: wrap;
+    padding: 0 20px 90px;
+    text-align: center;
+  }
+  .stat-strip .stat-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 26px;
+    color: var(--amber);
+    font-weight: 500;
+  }
+  .stat-strip .stat-label {
+    font-size: 12.5px;
+    color: var(--text-faint);
+    margin-top: 4px;
+  }
+
+  /* ---------- Section shared ---------- */
+  section { padding: 90px clamp(20px, 5vw, 64px); border-top: 1px solid var(--border); }
+  .section-inner { max-width: 1080px; margin: 0 auto; }
+  .section-head { max-width: 620px; margin-bottom: 56px; }
+  .section-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--teal);
+    margin-bottom: 14px;
+    display: block;
+  }
+  .section-head h2 {
+    font-size: clamp(26px, 3.5vw, 36px);
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: 16px;
+  }
+  .section-head p { color: var(--text-dim); font-size: 16px; line-height: 1.6; }
+
+  /* ---------- Cost comparison ---------- */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  @media (max-width: 720px) { .compare { grid-template-columns: 1fr; } }
+
+  .compare-col { background: var(--surface); padding: 32px clamp(20px, 3vw, 36px); }
+  .compare-col.highlight { background: var(--surface-2); }
+
+  .compare-col .compare-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-faint);
+    margin-bottom: 18px;
+  }
+  .compare-col.highlight .compare-label { color: var(--amber); }
+
+  .compare-col .compare-price {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 34px;
+    margin-bottom: 6px;
+  }
+  .compare-col .compare-unit { font-size: 13px; color: var(--text-faint); margin-bottom: 26px; }
+
+  .compare-list { list-style: none; }
+  .compare-list li {
+    font-size: 14.5px;
+    color: var(--text-dim);
+    padding: 9px 0;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .compare-list li:first-child { border-top: none; }
+  .compare-list li .mark { flex-shrink: 0; margin-top: 2px; }
+  .compare-col.highlight .compare-list li .mark { color: var(--teal); }
+  .compare-col:not(.highlight) .compare-list li .mark { color: var(--text-faint); }
+
+  /* ---------- Pillars ---------- */
+  .pillars {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  @media (max-width: 860px) { .pillars { grid-template-columns: 1fr; } }
+
+  .pillar { background: var(--surface); padding: 32px 28px; }
+  .pillar-icon {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    background: var(--amber-dim);
+    color: var(--amber);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 20px;
+  }
+  .pillar-icon svg { width: 17px; height: 17px; }
+  .pillar h3 { font-size: 17px; font-weight: 600; margin-bottom: 10px; }
+  .pillar p { font-size: 14.5px; color: var(--text-dim); line-height: 1.6; }
+
+  /* ---------- Footer ---------- */
+  footer {
+    padding: 40px clamp(20px, 5vw, 64px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  footer .foot-left { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-faint); }
+  footer .foot-links { display: flex; gap: 22px; font-size: 13px; color: var(--text-faint); }
+  footer .foot-links a:hover { color: var(--text-dim); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .logo-mark { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">
+    <span class="logo-mark"></span>
+    RunBeacon
+  </div>
+  <div class="nav-right">
+    <a href="https://github.com/synertek-cloud-services/beacon" class="nav-cta">Source on GitHub</a>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle light and dark theme">
+      <svg id="iconMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path></svg>
+      <svg id="iconSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg>
+    </button>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="radar-field" id="radarField"></div>
+  <div class="hero-content">
+    <span class="eyebrow">● COMING SOON — JOIN THE WAITLIST</span>
+    <h1>RMM that stops<br><span class="accent">charging by the endpoint.</span></h1>
+    <p class="sub">RunBeacon is an open-source, Cloudflare-native RMM agent. Self-host it for free, or let us run it for you — either way, you're not paying a per-device tax to watch your own machines.</p>
+
+    <form class="signup-form" id="waitlistForm">
+      <label for="emailInput" class="sr-only" style="position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0);">Email address</label>
+      <input type="email" id="emailInput" placeholder="you@company.com" required autocomplete="email">
+      <button type="submit" class="btn-primary">Join waitlist</button>
+    </form>
+    <div class="success-msg" id="successMsg">You're on the list. We'll email you when RunBeacon is ready.</div>
+    <p class="form-note">Built by an MSP that got tired of paying too. No spam, one email when we launch.</p>
+  </div>
+</section>
+
+<div class="stat-strip">
+  <div>
+    <div class="stat-num">$0</div>
+    <div class="stat-label">to self-host, forever</div>
+  </div>
+  <div>
+    <div class="stat-num">MIT</div>
+    <div class="stat-label">licensed core agent</div>
+  </div>
+  <div>
+    <div class="stat-num">Go</div>
+    <div class="stat-label">lightweight, single binary</div>
+  </div>
+</div>
+
+<section>
+  <div class="section-inner">
+    <div class="section-head">
+      <span class="section-tag">// THE PROBLEM</span>
+      <h2>Per-endpoint pricing punishes you for growing.</h2>
+      <p>Commercial RMM platforms charge per device, per month, forever. Add ten laptops, add ten more line items to your invoice. RunBeacon flips that: run the open-source agent yourself and pay nothing, or use our hosted cloud and pay one flat rate no matter how many endpoints you're watching.</p>
+    </div>
+
+    <div class="compare">
+      <div class="compare-col">
+        <div class="compare-label">TYPICAL COMMERCIAL RMM</div>
+        <div class="compare-price">$3–5</div>
+        <div class="compare-unit">per endpoint, per month</div>
+        <ul class="compare-list">
+          <li><span class="mark">–</span> Cost scales with every device you add</li>
+          <li><span class="mark">–</span> Closed source, vendor lock-in</li>
+          <li><span class="mark">–</span> Licensing tiers gate basic features</li>
+          <li><span class="mark">–</span> You never really own your monitoring stack</li>
+        </ul>
+      </div>
+      <div class="compare-col highlight">
+        <div class="compare-label">RUNBEACON</div>
+        <div class="compare-price">$0<span style="font-size:16px; color:var(--text-faint);"> or flat</span></div>
+        <div class="compare-unit">self-hosted, or one hosted-cloud price</div>
+        <ul class="compare-list">
+          <li><span class="mark">✓</span> Self-host free, forever, unlimited endpoints</li>
+          <li><span class="mark">✓</span> Open source — read it, fork it, audit it</li>
+          <li><span class="mark">✓</span> Or use our cloud for one flat monthly rate</li>
+          <li><span class="mark">✓</span> Your data, your infrastructure, your call</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-inner">
+    <div class="section-head">
+      <span class="section-tag">// HOW IT'S BUILT</span>
+      <h2>A small agent, a fast control plane.</h2>
+      <p>No bloated Windows service eating half a gig of RAM. No monolithic backend to babysit. RunBeacon is built to be light on the endpoint and cheap to run at scale.</p>
+    </div>
+
+    <div class="pillars">
+      <div class="pillar">
+        <div class="pillar-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+        </div>
+        <h3>Single Go binary</h3>
+        <p>One small, self-updating agent per endpoint. No runtime dependencies, no background bloat, rollback built in if an update goes wrong.</p>
+      </div>
+      <div class="pillar">
+        <div class="pillar-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"></path></svg>
+        </div>
+        <h3>Cloudflare-native control plane</h3>
+        <p>Workers, D1, and Durable Objects handle orchestration — no servers to patch, scales down to zero when nothing's happening.</p>
+      </div>
+      <div class="pillar">
+        <div class="pillar-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l16 16M4 20L20 4"></path><circle cx="12" cy="12" r="9"></circle></svg>
+        </div>
+        <h3>Consent-aware remote access</h3>
+        <p>Tiered remote desktop with a privacy-mode system, so techs get in fast without users feeling watched.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="foot-left">
+    <span class="logo-mark" style="width:14px; height:14px;"></span>
+    RunBeacon — an open-source project, built by Synertek Cloud Services
+  </div>
+  <div class="foot-links">
+    <a href="https://github.com/synertek-cloud-services/beacon">GitHub</a>
+    <a href="mailto:hello@runbeacon.net">hello@runbeacon.net</a>
+  </div>
+</footer>
+
+<script>
+  // Theme toggle
+  const root = document.documentElement;
+  const toggle = document.getElementById('themeToggle');
+  const iconMoon = document.getElementById('iconMoon');
+  const iconSun = document.getElementById('iconSun');
+
+  toggle.addEventListener('click', () => {
+    const isDark = root.getAttribute('data-theme') === 'dark';
+    root.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    iconMoon.style.display = isDark ? 'none' : 'block';
+    iconSun.style.display = isDark ? 'block' : 'none';
+  });
+
+  // Radar / endpoint field generation
+  const field = document.getElementById('radarField');
+  const COLS = 24, ROWS = 9;
+  const dots = [];
+  for (let i = 0; i < COLS * ROWS; i++) {
+    const d = document.createElement('div');
+    d.className = 'rdot';
+    field.appendChild(d);
+    dots.push(d);
+  }
+
+  function sweepPulse() {
+    // light up a scattered handful of dots briefly, like endpoints checking in
+    const litCount = 5 + Math.floor(Math.random() * 6);
+    const chosen = new Set();
+    while (chosen.size < litCount) {
+      chosen.add(Math.floor(Math.random() * dots.length));
+    }
+    chosen.forEach(i => {
+      dots[i].classList.add('lit');
+      setTimeout(() => dots[i].classList.remove('lit'), 900 + Math.random() * 600);
+    });
+  }
+
+  setInterval(sweepPulse, 700);
+  sweepPulse();
+
+  // Waitlist form
+  const form = document.getElementById('waitlistForm');
+  const successMsg = document.getElementById('successMsg');
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    // TODO: wire to actual Cloudflare Worker + D1 + Resend endpoint (same pattern as Restrayn waitlist)
+    form.style.display = 'none';
+    successMsg.style.display = 'block';
+  });
+</script>
+
+</body>
+</html>

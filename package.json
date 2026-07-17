@@ -1,0 +1,36 @@
+{
+  "name": "runbeacon",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "release": "astro build && npx wrangler pages deploy"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^12.5.2",
+    "@astrojs/sitemap": "^3.4.1",
+    "@fontsource/inter": "^5.2.5",
+    "@fontsource/jetbrains-mono": "^5.2.5",
+    "@fontsource/space-grotesk": "^5.2.5",
+    "astro": "^5.8.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@cloudflare/workers-types": "^4.20260613.1",
+    "@tailwindcss/vite": "^4.1.0",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^6.0.3",
+    "wrangler": "^4.13.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp",
+      "workerd"
+    ]
+  }
+}

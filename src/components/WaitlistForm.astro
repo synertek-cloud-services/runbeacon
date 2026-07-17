@@ -1,0 +1,87 @@
+---
+// Inline email waitlist form — wired to /api/subscribe
+---
+
+<div id="waitlist-wrap">
+  <form id="waitlistForm" novalidate style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:440px; margin:0 auto;">
+    <label for="emailInput" style="position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0);">
+      Email address
+    </label>
+    <input
+      type="email"
+      id="emailInput"
+      name="email"
+      required
+      autocomplete="email"
+      placeholder="you@company.com"
+      style="flex:1; min-width:220px; padding:13px 16px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-family:inherit; font-size:14px;"
+    />
+    <button
+      type="submit"
+      id="submitBtn"
+      style="padding:13px 22px; border-radius:8px; border:none; background:var(--amber); color:#14100a; font-weight:600; font-size:14px; cursor:pointer; white-space:nowrap; font-family:inherit;"
+    >
+      Join waitlist
+    </button>
+  </form>
+
+  <div
+    id="formError"
+    role="alert"
+    style="display:none; max-width:440px; margin:12px auto 0; padding:12px 16px; border-radius:8px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171; font-size:14px;"
+  ></div>
+
+  <div
+    id="successMsg"
+    style="display:none; max-width:440px; margin:0 auto; padding:14px 18px; border-radius:8px; background:var(--success-bg); border:1px solid color-mix(in srgb, var(--teal) 35%, transparent); color:var(--teal); font-size:14px; font-weight:500; text-align:center;"
+  >
+    You're on the list. We'll email you when RunBeacon is ready.
+  </div>
+</div>
+
+<script>
+  const form     = document.getElementById('waitlistForm') as HTMLFormElement | null;
+  const errorEl  = document.getElementById('formError') as HTMLElement | null;
+  const successEl = document.getElementById('successMsg') as HTMLElement | null;
+  const submitBtn = document.getElementById('submitBtn') as HTMLButtonElement | null;
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!errorEl || !successEl || !submitBtn) return;
+
+    errorEl.style.display = 'none';
+
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
+    const email = (document.getElementById('emailInput') as HTMLInputElement).value.trim();
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Joining…';
+
+    try {
+      const res = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json() as { error?: string };
+
+      if (!res.ok) {
+        throw new Error(data.error ?? 'Something went wrong. Please try again.');
+      }
+
+      form.style.display = 'none';
+      successEl.style.display = 'block';
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Something went wrong.';
+      errorEl.textContent = message;
+      errorEl.style.display = 'block';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Join waitlist';
+    }
+  });
+</script>
