@@ -72,12 +72,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
   </div>
   <div style="padding:28px 32px;background:#12161d;">
     <p style="margin:0 0 16px;color:#9aa5b1;line-height:1.6;">
-      We'll email you when RunBeacon is ready — no newsletters, no drip sequences,
+      We'll email you when Beacon is ready — no newsletters, no drip sequences,
       just the one launch email.
     </p>
     <p style="margin:0 0 16px;color:#9aa5b1;line-height:1.6;">
       In the meantime, you can follow the open-source agent at
-      <a href="https://github.com/synertek-cloud-services/beacon" style="color:#ffa23c;">github.com/synertek-cloud-services/beacon</a>.
+      <a href="https://github.com/synertek-cloud-services/Beacon" style="color:#ffa23c;">github.com/synertek-cloud-services/Beacon</a>.
     </p>
     <p style="margin:0;color:#5b6470;font-size:13px;">— Built by Synertek Cloud Services</p>
   </div>
@@ -85,7 +85,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const teamHtml = `
 <div style="font-family:sans-serif;max-width:480px;color:#14171c;">
-  <h2 style="color:#ffa23c;margin:0 0 12px;">New RunBeacon signup</h2>
+  <h2 style="color:#ffa23c;margin:0 0 12px;">New Beacon signup</h2>
   <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
 </div>`.trim();
 
@@ -99,8 +99,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       const endpoint = `https://email.${env.AWS_REGION}.amazonaws.com/v2/email/outbound-emails`;
 
       await Promise.all([
-        sesEmail(aws, endpoint, env.FROM_EMAIL, email, "You're on the RunBeacon waitlist", userHtml),
-        sesEmail(aws, endpoint, env.FROM_EMAIL, env.TEAM_NOTIFY_EMAIL, `RunBeacon signup — ${email}`, teamHtml),
+        sesEmail(aws, endpoint, env.FROM_EMAIL, email, "You're on the Beacon waitlist", userHtml),
+        sesEmail(aws, endpoint, env.FROM_EMAIL, env.TEAM_NOTIFY_EMAIL, `Beacon signup — ${email}`, teamHtml),
       ]);
     } catch {
       console.error('SES send error for', email);
