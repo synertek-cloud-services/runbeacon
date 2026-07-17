@@ -72,7 +72,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   </div>
   <div style="padding:28px 32px;background:#ffffff;">
     <p style="margin:0 0 16px;color:#5b6470;line-height:1.6;">
-      We'll email you when Beacon is ready — no newsletters, no drip sequences,
+      We'll email you when Beacon RMM is ready — no newsletters, no drip sequences,
       just the one launch email.
     </p>
     <p style="margin:0 0 16px;color:#5b6470;line-height:1.6;">
@@ -85,7 +85,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const teamHtml = `
 <div style="font-family:sans-serif;max-width:480px;color:#14171c;">
-  <h2 style="color:#d97a1f;margin:0 0 12px;">New Beacon signup</h2>
+  <h2 style="color:#d97a1f;margin:0 0 12px;">New Beacon RMM signup</h2>
   <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
 </div>`.trim();
 
@@ -99,8 +99,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       const endpoint = `https://email.${env.AWS_REGION}.amazonaws.com/v2/email/outbound-emails`;
 
       await Promise.all([
-        sesEmail(aws, endpoint, env.FROM_EMAIL, email, "You're on the Beacon waitlist", userHtml),
-        sesEmail(aws, endpoint, env.FROM_EMAIL, env.TEAM_NOTIFY_EMAIL, `Beacon signup — ${email}`, teamHtml),
+        sesEmail(aws, endpoint, env.FROM_EMAIL, email, "You're on the Beacon RMM waitlist", userHtml),
+        sesEmail(aws, endpoint, env.FROM_EMAIL, env.TEAM_NOTIFY_EMAIL, `Beacon RMM signup — ${email}`, teamHtml),
       ]);
     } catch {
       console.error('SES send error for', email);

@@ -1,25 +1,29 @@
 # RunBeacon — Coming Soon Landing Page
 
 ## Project
-Marketing/waitlist page for RunBeacon, the SaaS offering built on top of the
-open-source Beacon RMM agent. Lives at runbeacon.net. This is pre-launch —
-product itself is not built yet, this is just the landing page + waitlist.
+Marketing/waitlist page for Beacon RMM — an open-source, Cloudflare-native RMM
+agent that can also be run as a hosted SaaS. Lives at runbeacon.net. This is
+pre-launch — product itself is not built yet, this is just the landing page +
+waitlist.
 
 ## Naming conventions (critical — don't mix these up)
-- **Beacon** — the product name. Capital B. Used in body copy, email templates,
-  section descriptions. This is the RMM agent people are signing up for.
-- **RunBeacon** — the site/domain brand only. Used in the nav logo, page title,
-  and when referring to the SaaS service specifically ("RunBeacon flips that").
-  Never used in place of Beacon when describing the product.
+- **Beacon RMM** — the product/brand name. Used everywhere the product is
+  named in UI text and email copy: nav logo, page title, hero/body copy,
+  section descriptions, footer credit, email subject lines and body copy.
+  This is the RMM agent (and optional hosted service) people are signing up for.
+- **runbeacon** / **runbeacon.net** — the literal domain and project
+  identifier only. Used in URLs, the `hello@runbeacon.net` address, and
+  project config (`package.json` name, `wrangler.toml` name field). Never
+  displayed as a brand/product name in page or email content.
 - **beacon** (lowercase) — the OSS repo name on GitHub
   (`synertek-cloud-services/beacon`). Lowercase in URLs and code references only.
 - **rmm.cloud.synertekcs.com** — Synertek's internal Beacon instance. Not
   related to this repo.
 
 ## Positioning (established session 2)
-The pitch is **no startup commitment**, not "no per-endpoint pricing." RunBeacon
+The pitch is **no startup commitment**, not "no per-endpoint pricing." Beacon RMM
 hosted will charge per endpoint but with no minimums, no annual contracts, no
-large buy-in. Self-hosting the beacon agent is free forever. The problem with
+large buy-in. Self-hosting the agent is free forever. The problem with
 incumbents is front-loaded cost and licensing tiers that gate basic features
 before you've proven the business.
 
@@ -38,7 +42,9 @@ before you've proven the business.
   (account ID: `8fefd04d62780c1624579795cb08f891`)
 - **Repo:** https://github.com/synertek-cloud-services/runbeacon
 - **Reference design:** `/reference/runbeacon-landing.html` — source of truth
-  for visual design and copy
+  for visual design and layout. Kept in sync for naming (Beacon RMM), but its
+  positioning copy predates the session-2 reframe — the live `index.astro`
+  copy is authoritative for messaging, not this file.
 
 ## Infrastructure (fully provisioned)
 - **Pages project:** `runbeacon` on Cloudflare Pages
