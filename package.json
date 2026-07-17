@@ -16,7 +16,8 @@
     "@fontsource/inter": "^5.2.5",
     "@fontsource/jetbrains-mono": "^5.2.5",
     "@fontsource/space-grotesk": "^5.2.5",
-    "astro": "^5.8.0"
+    "astro": "^5.8.0",
+    "aws4fetch": "^1.0.20"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",

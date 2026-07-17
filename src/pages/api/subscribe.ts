@@ -1,18 +1,21 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
+import { AwsClient } from 'aws4fetch';
 
 interface Env {
   DB: D1Database;
-  RESEND_API_KEY: string;
-  RESEND_FROM_EMAIL: string;
+  FROM_EMAIL: string;
   TEAM_NOTIFY_EMAIL: string;
+  AWS_ACCESS_KEY_ID: string;
+  AWS_SECRET_ACCESS_KEY: string;
+  AWS_REGION: string;
 }
 
 export const POST: APIRoute = async ({ request, locals }) => {
   const env = (locals as { runtime?: { env?: Env } }).runtime?.env;
 
-  if (!env?.DB || !env?.RESEND_API_KEY) {
+  if (!env?.DB) {
     return json({ error: 'Server configuration error.' }, 500);
   }
 
@@ -61,7 +64,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     } catch { /* non-fatal */ }
   }
 
-  if (!isDuplicate) {
+  if (!isDuplicate && env.AWS_ACCESS_KEY_ID) {
     const userHtml = `
 <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#f2f4f7;background:#0a0d12;border-radius:10px;overflow:hidden;">
   <div style="background:#ffa23c;padding:28px 32px;">
@@ -87,42 +90,51 @@ export const POST: APIRoute = async ({ request, locals }) => {
 </div>`.trim();
 
     try {
+      const aws = new AwsClient({
+        accessKeyId: env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+        service: 'ses',
+        region: env.AWS_REGION,
+      });
+      const endpoint = `https://email.${env.AWS_REGION}.amazonaws.com/v2/email/outbound-emails`;
+
       await Promise.all([
-        fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${env.RESEND_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            from: env.RESEND_FROM_EMAIL,
-            to: [email],
-            subject: "You're on the RunBeacon waitlist",
-            html: userHtml,
-          }),
-        }),
-        fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${env.RESEND_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            from: env.RESEND_FROM_EMAIL,
-            to: [env.TEAM_NOTIFY_EMAIL],
-            subject: `RunBeacon signup — ${email}`,
-            html: teamHtml,
-          }),
-        }),
+        sesEmail(aws, endpoint, env.FROM_EMAIL, email, "You're on the RunBeacon waitlist", userHtml),
+        sesEmail(aws, endpoint, env.FROM_EMAIL, env.TEAM_NOTIFY_EMAIL, `RunBeacon signup — ${email}`, teamHtml),
       ]);
     } catch {
-      console.error('Resend API error for', email);
+      console.error('SES send error for', email);
       // Email failure is non-fatal — subscriber is already saved in D1
     }
   }
 
   return json({ success: true }, 200);
 };
+
+async function sesEmail(
+  aws: AwsClient,
+  endpoint: string,
+  from: string,
+  to: string,
+  subject: string,
+  html: string
+) {
+  const res = await aws.fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      FromEmailAddress: from,
+      Destination: { ToAddresses: [to] },
+      Content: {
+        Simple: {
+          Subject: { Data: subject },
+          Body: { Html: { Data: html } },
+        },
+      },
+    }),
+  });
+  if (!res.ok) throw new Error(`SES error ${res.status}: ${await res.text()}`);
+}
 
 function json(data: Record<string, unknown>, status: number): Response {
   return new Response(JSON.stringify(data), {

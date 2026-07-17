@@ -2,8 +2,9 @@ name = "runbeacon"
 pages_build_output_dir = "dist"
 
 [vars]
-RESEND_FROM_EMAIL = "hello@runbeacon.net"
+FROM_EMAIL = "hello@runbeacon.net"
 TEAM_NOTIFY_EMAIL = "jeremys@codenexus.org"
+AWS_REGION = "us-west-2"
 
 [[d1_databases]]
 binding = "DB"
