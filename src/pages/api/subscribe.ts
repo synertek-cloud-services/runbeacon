@@ -66,26 +66,26 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   if (!isDuplicate && env.AWS_ACCESS_KEY_ID) {
     const userHtml = `
-<div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#f2f4f7;background:#0a0d12;border-radius:10px;overflow:hidden;">
-  <div style="background:#ffa23c;padding:28px 32px;">
-    <h1 style="color:#14100a;font-size:20px;margin:0;font-weight:700;">You're on the list.</h1>
+<div style="font-family:sans-serif;max-width:560px;margin:0 auto;background:#faf9f6;border-radius:10px;overflow:hidden;border:1px solid #e4e2dc;">
+  <div style="background:#d97a1f;padding:28px 32px;">
+    <h1 style="color:#ffffff;font-size:20px;margin:0;font-weight:700;">You're on the list.</h1>
   </div>
-  <div style="padding:28px 32px;background:#12161d;">
-    <p style="margin:0 0 16px;color:#9aa5b1;line-height:1.6;">
+  <div style="padding:28px 32px;background:#ffffff;">
+    <p style="margin:0 0 16px;color:#5b6470;line-height:1.6;">
       We'll email you when Beacon is ready — no newsletters, no drip sequences,
       just the one launch email.
     </p>
-    <p style="margin:0 0 16px;color:#9aa5b1;line-height:1.6;">
+    <p style="margin:0 0 16px;color:#5b6470;line-height:1.6;">
       In the meantime, you can follow the open-source agent at
-      <a href="https://github.com/synertek-cloud-services/Beacon" style="color:#ffa23c;">github.com/synertek-cloud-services/Beacon</a>.
+      <a href="https://github.com/synertek-cloud-services/beacon" style="color:#d97a1f;">github.com/synertek-cloud-services/beacon</a>.
     </p>
-    <p style="margin:0;color:#5b6470;font-size:13px;">— Built by Synertek Cloud Services</p>
+    <p style="margin:0;color:#8b93a0;font-size:13px;">— Built by Synertek Cloud Services</p>
   </div>
 </div>`.trim();
 
     const teamHtml = `
 <div style="font-family:sans-serif;max-width:480px;color:#14171c;">
-  <h2 style="color:#ffa23c;margin:0 0 12px;">New Beacon signup</h2>
+  <h2 style="color:#d97a1f;margin:0 0 12px;">New Beacon signup</h2>
   <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
 </div>`.trim();
 
