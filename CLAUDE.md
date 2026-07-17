@@ -5,13 +5,23 @@ Marketing/waitlist page for RunBeacon, the SaaS offering built on top of the
 open-source Beacon RMM agent. Lives at runbeacon.net. This is pre-launch —
 product itself is not built yet, this is just the landing page + waitlist.
 
-## Naming context (don't confuse these)
-- **beacon** — the OSS core repo (Go agent + Cloudflare control plane), under
-  synertek-cloud-services org. Self-hosters use this directly.
-- **RunBeacon** — this project. The hosted SaaS brand, standalone domain
-  (runbeacon.net), Synertek-affiliated but not Synertek-branded up front.
-- **rmm.cloud.synertekcs.com** — Synertek's own internal instance of Beacon.
-  Not related to this repo.
+## Naming conventions (critical — don't mix these up)
+- **Beacon** — the product name. Capital B. Used in body copy, email templates,
+  section descriptions. This is the RMM agent people are signing up for.
+- **RunBeacon** — the site/domain brand only. Used in the nav logo, page title,
+  and when referring to the SaaS service specifically ("RunBeacon flips that").
+  Never used in place of Beacon when describing the product.
+- **beacon** (lowercase) — the OSS repo name on GitHub
+  (`synertek-cloud-services/beacon`). Lowercase in URLs and code references only.
+- **rmm.cloud.synertekcs.com** — Synertek's internal Beacon instance. Not
+  related to this repo.
+
+## Positioning (established session 2)
+The pitch is **no startup commitment**, not "no per-endpoint pricing." RunBeacon
+hosted will charge per endpoint but with no minimums, no annual contracts, no
+large buy-in. Self-hosting the beacon agent is free forever. The problem with
+incumbents is front-loaded cost and licensing tiers that gate basic features
+before you've proven the business.
 
 ## Stack
 - **Framework:** Astro 5 with `@astrojs/cloudflare` adapter (SSR mode for the
@@ -20,25 +30,29 @@ product itself is not built yet, this is just the landing page + waitlist.
   colors via CSS custom properties (`var(--amber)`, `var(--bg)`, etc.)
 - **Fonts:** `@fontsource` packages — Space Grotesk (headings), Inter (body),
   JetBrains Mono (labels/stats/code tags)
+- **Email:** Amazon SES v2 API via `aws4fetch` — SigV4 signing, raw HTTP,
+  no AWS SDK. Region: `us-west-2`. Identity: `runbeacon.net` (verified).
 - **Backend:** Cloudflare Pages Functions via Astro API route
-  (`src/pages/api/subscribe.ts`) — D1 for storage, Resend for email
+  (`src/pages/api/subscribe.ts`) — D1 for storage, SES for email
 - **Deploy:** Cloudflare Pages, `synertek-cloud-services` Cloudflare account
   (account ID: `8fefd04d62780c1624579795cb08f891`)
 - **Repo:** https://github.com/synertek-cloud-services/runbeacon
 - **Reference design:** `/reference/runbeacon-landing.html` — source of truth
   for visual design and copy
 
-## Infrastructure (already provisioned)
+## Infrastructure (fully provisioned)
 - **Pages project:** `runbeacon` on Cloudflare Pages
-- **Live URL:** https://runbeacon.pages.dev (also https://02ce63a0.runbeacon.pages.dev)
-- **Custom domain:** `runbeacon.net` — added to Pages project, cert pending
-  at end of last session (should be active now)
+- **Live URL:** https://runbeacon.pages.dev
+- **Custom domain:** `runbeacon.net` — active
 - **D1 database:** `runbeacon-db` (ID: `509aef3f-58a4-4f8e-b7cb-9fb3b8d221ed`)
-  — created and schema applied (both local and remote)
-- **Env vars set in Pages:** `RESEND_FROM_EMAIL=hello@runbeacon.net`,
-  `TEAM_NOTIFY_EMAIL=jeremys@codenexus.org`
-- **Missing:** `RESEND_API_KEY` secret — not yet set, Resend domain verification
-  tabled until Resend pricing is sorted
+  — schema applied (local and remote)
+- **Env vars in Pages (plain-text):** `FROM_EMAIL=hello@runbeacon.net`,
+  `TEAM_NOTIFY_EMAIL=hello@runbeacon.net`, `AWS_REGION=us-west-2`
+- **Secrets in Pages:** `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
+- **SES production access:** requested, pending AWS approval (submitted session 2)
+- **IAM user:** `runbeacon-ses` with `AmazonSESFullAccess`
+- **Cloudflare creds:** `.envrc` at project root sets `CLOUDFLARE_API_TOKEN`
+  and `CLOUDFLARE_ACCOUNT_ID` for the synertek account (direnv)
 
 ## Architecture
 ```
@@ -48,7 +62,7 @@ src/
   pages/
     index.astro                 Single page — all sections inline with
                                 scoped <style> block
-    api/subscribe.ts            POST endpoint — D1 insert + Resend emails
+    api/subscribe.ts            POST endpoint — D1 insert + SES emails
                                 export const prerender = false
   components/
     WaitlistForm.astro          Email input + submit, fetch to /api/subscribe,
@@ -59,6 +73,7 @@ public/
   favicon.svg                   Amber beacon dot SVG
 schema.sql                      subscribers + engagement_log tables
 wrangler.toml                   Pages config, D1 binding, plain-text vars
+.envrc                          Local Cloudflare creds (gitignored, direnv)
 ```
 
 ## Coding patterns established
@@ -68,20 +83,30 @@ wrangler.toml                   Pages config, D1 binding, plain-text vars
 - **Colors:** Never use Tailwind color classes for brand colors. Always
   reference `var(--amber)`, `var(--teal)`, `var(--bg)`, etc. directly in
   `<style>` blocks or inline styles.
-- **API route pattern:** Mirrors Restrayn's `subscribe.ts` — validate email,
-  D1 insert with UNIQUE constraint duplicate handling, Resend via raw fetch
-  (not the Resend SDK), non-fatal email failures, `export const prerender = false`.
+- **SES email pattern:** `AwsClient` from `aws4fetch`, instantiated per-request
+  in `subscribe.ts`. Endpoint: `https://email.${AWS_REGION}.amazonaws.com/v2/email/outbound-emails`.
+  SES v2 JSON body format. Email failures are non-fatal — subscriber already
+  saved in D1 before email attempt.
+- **Email templates:** Use light theme color values hardcoded as inline styles
+  (not CSS vars — email clients don't support them). White background, amber
+  (`#d97a1f`) header/accents, `#5b6470` body text. Safe across all email clients.
 - **Env access:** `(locals as { runtime?: { env?: Env } }).runtime?.env` —
-  same Cloudflare adapter pattern as Restrayn.
+  Cloudflare adapter pattern.
 - **WaitlistForm:** Uses inline styles (not Tailwind classes) to inherit CSS
-  custom properties. Script uses `define:vars` pattern isn't needed here —
-  just plain `<script>` with direct DOM IDs.
+  custom properties. Plain `<script>` with direct DOM IDs.
 
 ## Functional requirements status
-- [x] Email waitlist signup — D1 insert works; Resend wired but key not set
+- [x] Email waitlist signup — D1 insert works
+- [x] SES confirmation email — wired, pending AWS production access approval
 - [x] Dark/light theme toggle — session-only
 - [x] Responsive to mobile
 - [x] Deployed to Cloudflare Pages, runbeacon.net
+
+## Compliance todos (before sending launch email)
+- [ ] Unsubscribe endpoint (`/api/unsubscribe`) + link in launch email
+- [ ] Physical mailing address in launch email (CAN-SPAM)
+- [ ] SNS bounce/complaint notifications → email alert
+- Deletion requests: honor by removing row from D1, contact via hello@runbeacon.net
 
 ## Explicitly out of scope for this pass
 - Actual product functionality (agent, dashboard, monitoring)
@@ -90,9 +115,7 @@ wrangler.toml                   Pages config, D1 binding, plain-text vars
 
 ## Deployment commands
 ```bash
-pnpm build && npx wrangler pages deploy dist --project-name runbeacon --branch main
-# or just:
-pnpm release
+pnpm release   # builds + deploys to Cloudflare Pages
 ```
 
 ## Notes
@@ -101,3 +124,5 @@ pnpm release
 - Do not add Co-Authored-By lines to git commits.
 - Restrayn project at `/home/jeremys/projects/restrayn` is the reference
   pattern for stack/infra decisions.
+- Email provider was Resend in session 1, switched to SES in session 2.
+  Do not reintroduce Resend.

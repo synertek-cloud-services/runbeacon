@@ -29,17 +29,54 @@
 - **Resend via raw `fetch`** — not the Resend SDK. Matches Restrayn pattern,
   avoids an extra dependency.
 
-### What's blocked / deferred
-- **Resend API key** — not set. User needs to sort out Resend domain pricing
-  before `hello@runbeacon.net` can be a verified sender. The form still saves
-  emails to D1; no subscriber data is lost.
-- **`runbeacon.net` cert** — was provisioning at session end. Should be active
-  now; check Cloudflare Pages dashboard if the domain isn't resolving.
+---
+
+## Session 2 — 2026-07-16
+
+### What we finished
+- Added `.envrc` with synertek-cloud-services Cloudflare credentials
+  (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`). Token sourced from
+  `beacon-docs` project. `direnv allow` applied.
+- Switched email provider from Resend to Amazon SES:
+  - Installed `aws4fetch` for SigV4 request signing
+  - Rewrote `subscribe.ts` to use SES v2 API directly (inline, no adapter layer)
+  - Renamed `RESEND_FROM_EMAIL` → `FROM_EMAIL` in `wrangler.toml`
+  - Added `AWS_REGION = "us-west-2"` to `wrangler.toml`
+  - Set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` as Pages secrets
+  - IAM user `runbeacon-ses` created with `AmazonSESFullAccess`
+  - `runbeacon.net` already verified in SES (us-west-2), DKIM enabled
+  - SES production access request submitted — awaiting AWS approval
+- Rewrote landing page copy to reflect correct positioning:
+  - Headline: "RMM that doesn't make you commit before you're ready."
+  - Problem framing: no startup commitment / no minimums, not "no per-endpoint fees"
+  - Compare grid updated: "no minimums or annual contracts" instead of "flat rate"
+- Standardised product naming: **Beacon** (capital B) in all body copy and
+  email templates; **RunBeacon** reserved for nav logo and brand references only
+- Switched email template from dark theme to light theme colors (inline styles,
+  safe across all email clients)
+
+### Key technical decisions
+- **SES over Resend** — user's preference; domain already verified in SES
+- **aws4fetch not AWS SDK** — lightweight, edge-compatible, matches raw-fetch
+  pattern already used for Resend. No adapter abstraction — single deployer SaaS,
+  not worth the complexity.
+- **us-west-2** — region SES identity was created in; matches `wrangler.toml`
+- **Light theme for emails** — email clients don't support CSS vars or
+  `data-theme`; hardcoded light palette is safe everywhere
+
+### What's blocked / pending
+- **SES production access** — AWS requested more info, response submitted.
+  Approval typically same day. Until approved, emails are silently skipped
+  (D1 still saves signups — no data lost).
+- **SNS bounce/complaint notifications** — set up after production access
+  is granted. Routes SES bounce/complaint events to an email alert.
 
 ### Next steps
-1. **Wire up Resend** — once domain is verified, run:
-   `npx wrangler pages secret put RESEND_API_KEY --project-name runbeacon`
-2. **Verify the live site** — open runbeacon.net and confirm the page loads,
-   theme toggle works, form submits (check D1 for the row)
-3. **Consider `www` redirect** — check if `www.runbeacon.net` needs a separate
-   Pages custom domain entry or a DNS redirect rule
+1. **Confirm SES production access** — once approved, test end-to-end by
+   submitting the live form and checking inbox + D1
+2. **Set up SNS bounce/complaint notifications** — SES → SNS topic →
+   email subscription. Protects sender reputation.
+3. **Pre-launch email compliance** — before sending the launch email, add:
+   - `/api/unsubscribe?token=xxx` endpoint + D1 delete
+   - Unsubscribe link in launch email template
+   - Physical mailing address in launch email (CAN-SPAM)
