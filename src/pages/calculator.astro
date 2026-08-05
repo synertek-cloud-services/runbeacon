@@ -1,0 +1,525 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+  title="Beacon RMM — self-host cost calculator"
+  description="How many endpoints can you monitor for free on Cloudflare's free tier? A calculator based on Beacon RMM's actual check-in behavior, traced from the open-source code."
+>
+
+<!-- ── Nav ──────────────────────────────────────────────────────────────── -->
+<nav>
+  <a class="logo" href="/">
+    <img src="/brand-mark.svg" alt="" class="logo-mark" />
+    Beacon RMM
+  </a>
+  <div class="nav-right">
+    <a href="https://github.com/synertek-cloud-services/beacon" class="nav-cta" target="_blank" rel="noopener noreferrer">
+      Source on GitHub
+    </a>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle light and dark theme">
+      <svg id="iconMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+      </svg>
+      <svg id="iconSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+      </svg>
+    </button>
+  </div>
+</nav>
+
+<!-- ── Header ───────────────────────────────────────────────────────────── -->
+<section class="calc-hero">
+  <div class="calc-hero-inner">
+    <span class="section-tag">// SELF-HOSTING COST</span>
+    <h1>How far does Cloudflare's free tier take you?</h1>
+    <p class="sub">
+      Beacon RMM's agent checks in every 60 seconds. Every check-in costs a
+      little bit of Cloudflare Workers and D1 usage. Drag the slider to see
+      exactly where your fleet lands — the math below is traced directly from
+      the <a href="https://github.com/synertek-cloud-services/beacon" target="_blank" rel="noopener noreferrer">open-source code</a>,
+      not a guess.
+    </p>
+  </div>
+</section>
+
+<!-- ── Calculator ───────────────────────────────────────────────────────── -->
+<section class="calc-section">
+  <div class="section-inner">
+    <div class="calc-widget">
+      <div class="calc-input-row">
+        <label for="endpointRange">Monitored endpoints</label>
+        <input type="number" id="endpointCount" min="1" max="5000" value="50" />
+      </div>
+      <input type="range" id="endpointRange" min="1" max="1000" value="50" step="1" />
+      <div class="calc-range-labels">
+        <span>1</span>
+        <span>250</span>
+        <span>500</span>
+        <span>750</span>
+        <span>1000+</span>
+      </div>
+
+      <div class="calc-verdict" id="calcVerdict">
+        <span class="calc-verdict-badge" id="verdictBadge">● $0/month</span>
+        <p id="verdictText">Comfortably inside Cloudflare's free tier.</p>
+      </div>
+
+      <div class="calc-metrics">
+        <div class="calc-metric">
+          <div class="calc-metric-head">
+            <span>Worker requests / day</span>
+            <span class="mono" id="metricWorkerText">—</span>
+          </div>
+          <div class="calc-bar"><div class="calc-bar-fill" id="metricWorkerBar"></div></div>
+        </div>
+        <div class="calc-metric">
+          <div class="calc-metric-head">
+            <span>D1 rows written / day</span>
+            <span class="mono" id="metricWritesText">—</span>
+          </div>
+          <div class="calc-bar"><div class="calc-bar-fill" id="metricWritesBar"></div></div>
+        </div>
+        <div class="calc-metric">
+          <div class="calc-metric-head">
+            <span>D1 rows read / day</span>
+            <span class="mono" id="metricReadsText">—</span>
+          </div>
+          <div class="calc-bar"><div class="calc-bar-fill" id="metricReadsBar"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <details class="calc-methodology">
+      <summary>How this is calculated</summary>
+      <div class="calc-methodology-body">
+        <p>
+          Beacon's agent checks in every <strong>60 seconds</strong> —
+          1,440 times per device per day, hardcoded in
+          <code>agent/cmd/agent/main.go</code>. Each check-in is traced
+          through the Worker's <code>/v1/checkin</code> route to:
+        </p>
+        <ul>
+          <li>1 Cloudflare Workers request</li>
+          <li>1 D1 row write (updating the device's last-seen status), every time</li>
+          <li>~13 D1 row reads (looking up maintenance windows, alert policies, and queued commands) — this is a floor for an idle, lightly-configured device; more active alert monitors or pending commands read more rows</li>
+          <li>0 Durable Object calls — check-ins don't touch Durable Objects at all in this codebase (those are only used for interactive remote-session relaying, a separate feature you use on demand)</li>
+        </ul>
+        <p>
+          On top of that, each device makes two more Worker requests a day
+          (a software/patch audit and an update check), and the control
+          plane runs a scheduled job every 2 minutes regardless of fleet
+          size (720 requests/day), which also re-reads every device once
+          per tick to evaluate offline alerts.
+        </p>
+        <p>
+          Compared against Cloudflare's current published free-tier limits
+          (100,000 Workers requests/day, 100,000 D1 row writes/day, 5,000,000
+          D1 row reads/day), Workers requests and D1 writes are the first
+          limits you'll hit — both land around the same fleet size. Past
+          that, this estimates the monthly cost on Cloudflare's $5/month
+          Workers Paid plan, which includes 10M requests and 50M D1 writes
+          before any usage-based overage kicks in.
+        </p>
+        <p>
+          This is an estimate, not a guarantee — your actual read volume
+          depends on how many alert monitors and maintenance policies you
+          configure. It doesn't include storage costs, which stay
+          negligible until you're retaining a long history across a very
+          large fleet.
+        </p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ── Footer ────────────────────────────────────────────────────────────── -->
+<footer>
+  <div class="foot-left">
+    <img src="/brand-mark.svg" alt="" class="logo-mark" style="height:18px; width:auto;" aria-hidden="true" />
+    Beacon RMM — an open-source project, built by Synertek Cloud Services
+  </div>
+  <div class="foot-links">
+    <a href="https://github.com/synertek-cloud-services/beacon" target="_blank" rel="noopener noreferrer">GitHub</a>
+    <a href="mailto:hello@runbeacon.net">hello@runbeacon.net</a>
+  </div>
+</footer>
+
+</Layout>
+
+<style>
+  /* ── Nav (shared pattern) ─────────────────────────────────────────────── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px clamp(20px, 5vw, 64px);
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 600;
+    font-family: var(--font-display);
+    color: var(--text);
+  }
+
+  .logo-mark {
+    height: 26px;
+    width: auto;
+    filter: drop-shadow(0 0 3px color-mix(in srgb, var(--brand) 60%, transparent))
+            drop-shadow(0 0 9px color-mix(in srgb, var(--brand) 35%, transparent));
+    flex-shrink: 0;
+  }
+
+  .nav-right { display: flex; align-items: center; gap: 18px; }
+
+  .theme-toggle {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-dim);
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .theme-toggle:hover { color: var(--text); border-color: var(--text-faint); }
+  .theme-toggle svg { width: 16px; height: 16px; }
+
+  .nav-cta {
+    font-size: 13px;
+    font-weight: 500;
+    padding: 9px 16px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .nav-cta:hover { border-color: var(--text-faint); color: var(--text); }
+
+  /* ── Header ───────────────────────────────────────────────────────────── */
+  .calc-hero {
+    padding: clamp(50px, 8vw, 90px) clamp(20px, 5vw, 64px) 60px;
+  }
+
+  .calc-hero-inner { max-width: 720px; margin: 0 auto; text-align: center; }
+
+  .section-tag {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--success);
+    margin-bottom: 14px;
+    display: block;
+  }
+
+  .calc-hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(30px, 4.5vw, 46px);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 18px;
+  }
+
+  .calc-hero p.sub {
+    font-size: clamp(15px, 1.6vw, 17px);
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .calc-hero p.sub a { color: var(--primary); text-decoration: underline; }
+
+  /* ── Calculator widget ───────────────────────────────────────────────── */
+  .calc-section {
+    padding: 0 clamp(20px, 5vw, 64px) 90px;
+  }
+
+  .section-inner { max-width: 720px; margin: 0 auto; }
+
+  .calc-widget {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: clamp(24px, 4vw, 40px);
+  }
+
+  .calc-input-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .calc-input-row label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  #endpointCount {
+    width: 90px;
+    padding: 8px 10px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 15px;
+    text-align: right;
+  }
+
+  #endpointRange {
+    width: 100%;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+
+  .calc-range-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11.5px;
+    font-family: var(--font-mono);
+    color: var(--text-faint);
+    margin-top: 6px;
+    margin-bottom: 28px;
+  }
+
+  .calc-verdict {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    padding: 22px;
+    border-radius: 10px;
+    background: var(--success-bg);
+    border: 1px solid color-mix(in srgb, var(--success) 35%, transparent);
+    margin-bottom: 28px;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  .calc-verdict.over {
+    background: var(--primary-dim);
+    border-color: color-mix(in srgb, var(--primary) 35%, transparent);
+  }
+
+  .calc-verdict-badge {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--success);
+  }
+
+  .calc-verdict.over .calc-verdict-badge { color: var(--primary); }
+
+  .calc-verdict p {
+    font-size: 13.5px;
+    color: var(--text-dim);
+    max-width: 440px;
+  }
+
+  .calc-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .calc-metric-head {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+
+  .calc-metric-head .mono { font-family: var(--font-mono); color: var(--text); }
+
+  .calc-bar {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--surface-2);
+    overflow: hidden;
+  }
+
+  .calc-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--primary);
+    transition: width 0.2s ease;
+  }
+
+  /* ── Methodology ──────────────────────────────────────────────────────── */
+  .calc-methodology {
+    margin-top: 28px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+  }
+
+  .calc-methodology summary {
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .calc-methodology-body {
+    margin-top: 16px;
+    font-size: 13.5px;
+    color: var(--text-dim);
+    line-height: 1.65;
+  }
+
+  .calc-methodology-body p { margin-bottom: 12px; }
+  .calc-methodology-body p:last-child { margin-bottom: 0; }
+
+  .calc-methodology-body ul { margin: 0 0 12px 18px; }
+  .calc-methodology-body li { margin-bottom: 4px; }
+
+  .calc-methodology-body code {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    background: var(--surface-2);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+
+  /* ── Footer ───────────────────────────────────────────────────────────── */
+  footer {
+    padding: 40px clamp(20px, 5vw, 64px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .foot-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-faint);
+  }
+
+  .foot-links { display: flex; gap: 22px; font-size: 13px; color: var(--text-faint); }
+  .foot-links a:hover { color: var(--text-dim); }
+</style>
+
+<script>
+  // ── Grounded in agent/cmd/agent/main.go and worker/src/routes/checkin.ts ──
+  const CHECKINS_PER_DAY = 1440; // 60s interval
+  const D1_READS_PER_CHECKIN = 13;
+  const DAILY_EXTRA_WORKER_REQ_PER_ENDPOINT = 2; // audit + update check
+  const CRON_BASELINE_WORKER_REQ_PER_DAY = 720; // */2 * * * * cron, fleet-independent
+  const CRON_OFFLINE_ALERT_READ_PER_ENDPOINT_PER_DAY = 720; // cron re-reads every device each tick
+
+  const WORKERS_FREE_REQ_DAY = 100_000;
+  const D1_FREE_WRITES_DAY = 100_000;
+  const D1_FREE_READS_DAY = 5_000_000;
+
+  const WORKERS_PAID_BASE = 5;
+  const WORKERS_PAID_INCLUDED_REQ_MONTH = 10_000_000;
+  const WORKERS_PAID_OVERAGE_PER_MILLION_REQ = 0.30;
+  const D1_PAID_INCLUDED_WRITES_MONTH = 50_000_000;
+  const D1_PAID_OVERAGE_PER_MILLION_WRITE = 1.00;
+  const D1_PAID_INCLUDED_READS_MONTH = 25_000_000_000;
+  const D1_PAID_OVERAGE_PER_MILLION_READ = 0.001;
+
+  function compute(endpoints: number) {
+    const workerReqDay = endpoints * (CHECKINS_PER_DAY + DAILY_EXTRA_WORKER_REQ_PER_ENDPOINT) + CRON_BASELINE_WORKER_REQ_PER_DAY;
+    const d1WritesDay = endpoints * CHECKINS_PER_DAY;
+    const d1ReadsDay = endpoints * (CHECKINS_PER_DAY * D1_READS_PER_CHECKIN + CRON_OFFLINE_ALERT_READ_PER_ENDPOINT_PER_DAY);
+
+    const withinFree = workerReqDay <= WORKERS_FREE_REQ_DAY && d1WritesDay <= D1_FREE_WRITES_DAY && d1ReadsDay <= D1_FREE_READS_DAY;
+
+    let monthlyCost = 0;
+    if (!withinFree) {
+      const workerReqMonth = workerReqDay * 30;
+      const d1WritesMonth = d1WritesDay * 30;
+      const d1ReadsMonth = d1ReadsDay * 30;
+      monthlyCost = WORKERS_PAID_BASE;
+      if (workerReqMonth > WORKERS_PAID_INCLUDED_REQ_MONTH) {
+        monthlyCost += ((workerReqMonth - WORKERS_PAID_INCLUDED_REQ_MONTH) / 1_000_000) * WORKERS_PAID_OVERAGE_PER_MILLION_REQ;
+      }
+      if (d1WritesMonth > D1_PAID_INCLUDED_WRITES_MONTH) {
+        monthlyCost += ((d1WritesMonth - D1_PAID_INCLUDED_WRITES_MONTH) / 1_000_000) * D1_PAID_OVERAGE_PER_MILLION_WRITE;
+      }
+      if (d1ReadsMonth > D1_PAID_INCLUDED_READS_MONTH) {
+        monthlyCost += ((d1ReadsMonth - D1_PAID_INCLUDED_READS_MONTH) / 1_000_000) * D1_PAID_OVERAGE_PER_MILLION_READ;
+      }
+    }
+
+    return { workerReqDay, d1WritesDay, d1ReadsDay, withinFree, monthlyCost };
+  }
+
+  function fmt(n: number): string {
+    return Math.round(n).toLocaleString('en-US');
+  }
+
+  function pct(value: number, max: number): number {
+    return Math.min(100, (value / max) * 100);
+  }
+
+  const countInput = document.getElementById('endpointCount') as HTMLInputElement;
+  const rangeInput = document.getElementById('endpointRange') as HTMLInputElement;
+  const verdictEl = document.getElementById('calcVerdict') as HTMLElement;
+  const verdictBadge = document.getElementById('verdictBadge') as HTMLElement;
+  const verdictText = document.getElementById('verdictText') as HTMLElement;
+
+  const workerText = document.getElementById('metricWorkerText') as HTMLElement;
+  const workerBar = document.getElementById('metricWorkerBar') as HTMLElement;
+  const writesText = document.getElementById('metricWritesText') as HTMLElement;
+  const writesBar = document.getElementById('metricWritesBar') as HTMLElement;
+  const readsText = document.getElementById('metricReadsText') as HTMLElement;
+  const readsBar = document.getElementById('metricReadsBar') as HTMLElement;
+
+  function render(endpoints: number) {
+    const r = compute(endpoints);
+
+    workerText.textContent = `${fmt(r.workerReqDay)} / ${fmt(WORKERS_FREE_REQ_DAY)}`;
+    workerBar.style.width = `${pct(r.workerReqDay, WORKERS_FREE_REQ_DAY)}%`;
+
+    writesText.textContent = `${fmt(r.d1WritesDay)} / ${fmt(D1_FREE_WRITES_DAY)}`;
+    writesBar.style.width = `${pct(r.d1WritesDay, D1_FREE_WRITES_DAY)}%`;
+
+    readsText.textContent = `${fmt(r.d1ReadsDay)} / ${fmt(D1_FREE_READS_DAY)}`;
+    readsBar.style.width = `${pct(r.d1ReadsDay, D1_FREE_READS_DAY)}%`;
+
+    if (r.withinFree) {
+      verdictEl.classList.remove('over');
+      verdictBadge.textContent = '● $0/month';
+      verdictText.textContent = `Comfortably inside Cloudflare's free tier at ${fmt(endpoints)} endpoint${endpoints === 1 ? '' : 's'} — you'd pay Cloudflare nothing to run this.`;
+    } else {
+      verdictEl.classList.add('over');
+      verdictBadge.textContent = `● ~$${r.monthlyCost.toFixed(2)}/month`;
+      verdictText.textContent = `Past the free tier at ${fmt(endpoints)} endpoints — estimated cost on Cloudflare's $5/month Workers Paid plan.`;
+    }
+  }
+
+  function setEndpoints(value: number) {
+    const clamped = Math.max(1, Math.min(5000, Math.round(value)));
+    countInput.value = String(clamped);
+    rangeInput.value = String(Math.min(1000, clamped));
+    render(clamped);
+  }
+
+  countInput.addEventListener('input', () => setEndpoints(Number(countInput.value) || 1));
+  rangeInput.addEventListener('input', () => setEndpoints(Number(rangeInput.value)));
+
+  render(Number(countInput.value));
+</script>

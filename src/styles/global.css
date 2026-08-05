@@ -34,6 +34,8 @@
   --warning-dim:   rgba(240, 168, 64, 0.12);
   --dot:           #2a3350;
   --dot-lit:       var(--primary);
+  --brand:         #7c3aed;
+  --brand-light:   #c084fc;
 }
 
 [data-theme="light"] {

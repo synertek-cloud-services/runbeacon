@@ -22,6 +22,8 @@
     --dot: #2a3350;
     --dot-lit: var(--primary);
     --success-bg: rgba(45, 207, 160, 0.1);
+    --brand: #7c3aed;
+    --brand-light: #c084fc;
   }
 
   [data-theme="light"] {
@@ -83,17 +85,22 @@
   }
 
   .logo-mark {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--primary);
-    box-shadow: 0 0 0 4px var(--primary-dim), 0 0 16px 2px var(--primary);
+    height: 26px;
+    width: auto;
+    filter: drop-shadow(0 0 3px color-mix(in srgb, var(--brand) 60%, transparent))
+            drop-shadow(0 0 9px color-mix(in srgb, var(--brand) 35%, transparent));
     animation: pulse-mark 2.4s ease-in-out infinite;
   }
 
   @keyframes pulse-mark {
-    0%, 100% { box-shadow: 0 0 0 4px var(--primary-dim), 0 0 16px 2px var(--primary); }
-    50% { box-shadow: 0 0 0 7px var(--primary-dim), 0 0 22px 4px var(--primary); }
+    0%, 100% {
+      filter: drop-shadow(0 0 3px color-mix(in srgb, var(--brand) 60%, transparent))
+              drop-shadow(0 0 9px color-mix(in srgb, var(--brand) 35%, transparent));
+    }
+    50% {
+      filter: drop-shadow(0 0 5px color-mix(in srgb, var(--brand) 75%, transparent))
+              drop-shadow(0 0 14px color-mix(in srgb, var(--brand-light) 50%, transparent));
+    }
   }
 
   .nav-right { display: flex; align-items: center; gap: 18px; }
@@ -392,7 +399,7 @@
 
 <nav>
   <div class="logo">
-    <span class="logo-mark"></span>
+    <img src="/brand-mark.svg" alt="" class="logo-mark">
     Beacon RMM
   </div>
   <div class="nav-right">
@@ -461,7 +468,7 @@
         <div class="compare-price">$0<span style="font-size:16px; color:var(--text-faint);"> or flat</span></div>
         <div class="compare-unit">self-hosted, or one hosted-cloud price</div>
         <ul class="compare-list">
-          <li><span class="mark">✓</span> Self-host free, forever, unlimited endpoints</li>
+          <li><span class="mark">✓</span> Self-host free on Cloudflare's free tier</li>
           <li><span class="mark">✓</span> Open source — read it, fork it, audit it</li>
           <li><span class="mark">✓</span> Or use our cloud for one flat monthly rate</li>
           <li><span class="mark">✓</span> Your data, your infrastructure, your call</li>
@@ -507,7 +514,7 @@
 
 <footer>
   <div class="foot-left">
-    <span class="logo-mark" style="width:14px; height:14px;"></span>
+    <img src="/brand-mark.svg" alt="" class="logo-mark" style="height:18px; width:auto;">
     Beacon RMM — an open-source project, built by Synertek Cloud Services
   </div>
   <div class="foot-links">

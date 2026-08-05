@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="138 23 240 418" fill="none" role="img" aria-label="Beacon flame mark">
+  <defs>
+    <linearGradient id="flameGradient" x1="150" y1="390" x2="365" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7c3aed"></stop>
+      <stop offset="1" stop-color="#c084fc"></stop>
+    </linearGradient>
+
+    <linearGradient id="flameGradientReverse" x1="370" y1="390" x2="165" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#c084fc"></stop>
+      <stop offset="1" stop-color="#7c3aed"></stop>
+    </linearGradient>
+
+    <linearGradient id="bowlGradient" x1="168" y1="408" x2="344" y2="408" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7c3aed"></stop>
+      <stop offset="1" stop-color="#c084fc"></stop>
+    </linearGradient>
+  </defs>
+
+  <!-- Left flame shard -->
+  <path d="M158 200
+       L235 297
+       L246 365
+       L203 365
+       L174 326
+       Z" fill="url(#flameGradient)"></path>
+
+  <!-- Center flame shard -->
+  <path d="M290 43
+       L211 157
+       L238 289
+       L252 359
+       L264 359
+       L307 205
+       L280 158
+       Z" fill="url(#flameGradient)"></path>
+
+  <!-- Right flame shard -->
+  <path d="M356 208
+       L265 300
+       L256 365
+       L309 365
+       L342 327
+       Z" fill="url(#flameGradientReverse)"></path>
+
+  <!-- Narrow brazier bowl -->
+  <path d="M166 365
+       H346
+       L301 421
+       H211
+       Z" fill="url(#bowlGradient)"></path>
+</svg>

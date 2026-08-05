@@ -11,7 +11,7 @@ import WaitlistForm from '../components/WaitlistForm.astro';
 <!-- ── Nav ──────────────────────────────────────────────────────────────── -->
 <nav>
   <div class="logo">
-    <span class="logo-mark"></span>
+    <img src="/brand-mark.svg" alt="" class="logo-mark" />
     Beacon RMM
   </div>
   <div class="nav-right">
@@ -96,7 +96,7 @@ import WaitlistForm from '../components/WaitlistForm.astro';
         <div class="compare-price">$0<span class="compare-price-or"> self-hosted</span></div>
         <div class="compare-unit">or pay-as-you-grow hosted cloud</div>
         <ul class="compare-list">
-          <li><span class="mark">✓</span> Self-host free, forever, unlimited endpoints</li>
+          <li><span class="mark">✓</span> Self-host free on Cloudflare's free tier — <a href="/calculator">run the numbers</a></li>
           <li><span class="mark">✓</span> Open source — read it, fork it, audit it</li>
           <li><span class="mark">✓</span> Hosted cloud (beta waitlist) with no minimums or annual contracts</li>
           <li><span class="mark">✓</span> Your data, your infrastructure, your call</li>
@@ -180,7 +180,7 @@ import WaitlistForm from '../components/WaitlistForm.astro';
 <!-- ── Footer ────────────────────────────────────────────────────────────── -->
 <footer>
   <div class="foot-left">
-    <span class="logo-mark" style="width:14px; height:14px;" aria-hidden="true"></span>
+    <img src="/brand-mark.svg" alt="" class="logo-mark" style="height:18px; width:auto;" aria-hidden="true" />
     Beacon RMM — an open-source project, built by Synertek Cloud Services
   </div>
   <div class="foot-links">
@@ -216,18 +216,23 @@ import WaitlistForm from '../components/WaitlistForm.astro';
   }
 
   .logo-mark {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--primary);
-    box-shadow: 0 0 0 4px var(--primary-dim), 0 0 16px 2px var(--primary);
+    height: 26px;
+    width: auto;
+    filter: drop-shadow(0 0 3px color-mix(in srgb, var(--brand) 60%, transparent))
+            drop-shadow(0 0 9px color-mix(in srgb, var(--brand) 35%, transparent));
     animation: pulse-mark 2.4s ease-in-out infinite;
     flex-shrink: 0;
   }
 
   @keyframes pulse-mark {
-    0%, 100% { box-shadow: 0 0 0 4px var(--primary-dim), 0 0 16px 2px var(--primary); }
-    50%       { box-shadow: 0 0 0 7px var(--primary-dim), 0 0 22px 4px var(--primary); }
+    0%, 100% {
+      filter: drop-shadow(0 0 3px color-mix(in srgb, var(--brand) 60%, transparent))
+              drop-shadow(0 0 9px color-mix(in srgb, var(--brand) 35%, transparent));
+    }
+    50% {
+      filter: drop-shadow(0 0 5px color-mix(in srgb, var(--brand) 75%, transparent))
+              drop-shadow(0 0 14px color-mix(in srgb, var(--brand-light) 50%, transparent));
+    }
   }
 
   .nav-right { display: flex; align-items: center; gap: 18px; }
@@ -460,6 +465,7 @@ import WaitlistForm from '../components/WaitlistForm.astro';
 
   .compare-col.highlight .compare-list li .mark { color: var(--success); }
   .compare-col:not(.highlight) .compare-list li .mark { color: var(--text-faint); }
+  .compare-list li a { color: var(--primary); text-decoration: underline; }
 
   /* ── Pillars ──────────────────────────────────────────────────────────── */
   .pillars {
