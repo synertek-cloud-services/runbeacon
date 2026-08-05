@@ -67,17 +67,18 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (!isDuplicate && env.AWS_ACCESS_KEY_ID) {
     const userHtml = `
 <div style="font-family:sans-serif;max-width:560px;margin:0 auto;background:#faf9f6;border-radius:10px;overflow:hidden;border:1px solid #e4e2dc;">
-  <div style="background:#d97a1f;padding:28px 32px;">
-    <h1 style="color:#ffffff;font-size:20px;margin:0;font-weight:700;">You're on the list.</h1>
+  <div style="background:#1e47c2;padding:28px 32px;">
+    <h1 style="color:#ffffff;font-size:20px;margin:0;font-weight:700;">You're on the hosted beta waitlist.</h1>
   </div>
   <div style="padding:28px 32px;background:#ffffff;">
     <p style="margin:0 0 16px;color:#5b6470;line-height:1.6;">
-      We'll email you when Beacon RMM is ready — no newsletters, no drip sequences,
-      just the one launch email.
+      We'll email you the moment the hosted cloud beta opens — no newsletters, no drip
+      sequences, just that one email.
     </p>
     <p style="margin:0 0 16px;color:#5b6470;line-height:1.6;">
-      In the meantime, you can follow the open-source agent at
-      <a href="https://github.com/synertek-cloud-services/beacon" style="color:#d97a1f;">github.com/synertek-cloud-services/beacon</a>.
+      You don't have to wait, though — the open-source agent is live today. Self-host it
+      free, right now, at
+      <a href="https://github.com/synertek-cloud-services/beacon" style="color:#1e47c2;">github.com/synertek-cloud-services/beacon</a>.
     </p>
     <p style="margin:0;color:#8b93a0;font-size:13px;">— Built by Synertek Cloud Services</p>
   </div>
@@ -85,7 +86,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const teamHtml = `
 <div style="font-family:sans-serif;max-width:480px;color:#14171c;">
-  <h2 style="color:#d97a1f;margin:0 0 12px;">New Beacon RMM signup</h2>
+  <h2 style="color:#1e47c2;margin:0 0 12px;">New Beacon RMM hosted beta signup</h2>
   <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
 </div>`.trim();
 
@@ -99,8 +100,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       const endpoint = `https://email.${env.AWS_REGION}.amazonaws.com/v2/email/outbound-emails`;
 
       await Promise.all([
-        sesEmail(aws, endpoint, env.FROM_EMAIL, email, "You're on the Beacon RMM waitlist", userHtml),
-        sesEmail(aws, endpoint, env.FROM_EMAIL, env.TEAM_NOTIFY_EMAIL, `Beacon RMM signup — ${email}`, teamHtml),
+        sesEmail(aws, endpoint, env.FROM_EMAIL, email, "You're on the Beacon RMM hosted beta waitlist", userHtml),
+        sesEmail(aws, endpoint, env.FROM_EMAIL, env.TEAM_NOTIFY_EMAIL, `Beacon RMM hosted beta signup — ${email}`, teamHtml),
       ]);
     } catch {
       console.error('SES send error for', email);

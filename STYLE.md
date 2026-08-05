@@ -5,22 +5,31 @@
 All colors are CSS custom properties. Never hardcode hex values in components —
 always reference the variable.
 
+Palette matches the Beacon RMM product's shipped default dashboard theme
+(`beacon/dashboard/src/style.css` + `theme.ts`) for dark mode, 1:1. Light mode
+is independently derived (the product is dark-only) using the same hues,
+darkened for contrast on a light background.
+
 ### Dark theme (default — `:root`)
 | Variable | Value | Usage |
 |---|---|---|
-| `--bg` | `#0a0d12` | Page background |
-| `--surface` | `#12161d` | Cards, inputs, nav |
-| `--surface-2` | `#171c24` | Highlighted card (RunBeacon compare col) |
-| `--border` | `#1e242c` | All borders and dividers |
-| `--text` | `#f2f4f7` | Primary text |
-| `--text-dim` | `#9aa5b1` | Body copy, secondary text |
-| `--text-faint` | `#5b6470` | Labels, notes, placeholders |
-| `--amber` | `#ffa23c` | Primary accent — CTAs, logo mark, stats |
-| `--amber-dim` | `rgba(255,162,60,0.12)` | Amber tint backgrounds |
-| `--teal` | `#3ddbd9` | Secondary accent — section tags, checkmarks |
-| `--dot` | `#2a323d` | Radar field inactive dots |
-| `--dot-lit` | `#ffa23c` | Radar field active dots |
-| `--success-bg` | `rgba(61,219,217,0.10)` | Form success message background |
+| `--bg` | `#0c0e16` | Page background |
+| `--surface` | `#141720` | Cards, inputs, nav |
+| `--surface-2` | `#1c1f2e` | Highlighted card (RunBeacon compare col) |
+| `--surface-brand` | `#1d1235` | Hosted/SaaS section background |
+| `--border` | `#282d40` | All borders and dividers |
+| `--text` | `#e6e9f5` | Primary text |
+| `--text-dim` | `#a2a8c1` | Body copy, secondary text |
+| `--text-faint` | `#7f86a3` | Labels, notes, placeholders |
+| `--primary` | `#4169e1` | Primary accent — CTAs, logo mark, stats, OSS "available now" badge |
+| `--primary-hover` | `#4871e0` | Primary button hover state |
+| `--primary-dim` | `rgba(65,105,225,0.12)` | Primary tint backgrounds |
+| `--success` | `#2dcfa0` | Secondary accent — section tags, checkmarks |
+| `--success-bg` | `rgba(45,207,160,0.10)` | Form success message background |
+| `--warning` | `#f0a840` | Hosted/SaaS "beta, not yet launched" badge |
+| `--warning-dim` | `rgba(240,168,64,0.12)` | Warning tint backgrounds |
+| `--dot` | `#2a3350` | Radar field inactive dots |
+| `--dot-lit` | `var(--primary)` | Radar field active dots |
 
 ### Light theme (`[data-theme="light"]`)
 Same variables, different values — see `src/styles/global.css`.
@@ -49,10 +58,14 @@ not a Tailwind class (Tailwind only has `font-sans` and `font-mono` defined).
 ```css
 font-family: var(--font-mono);
 font-size: 12px;
-color: var(--amber);  /* or var(--teal) for section tags */
+color: var(--primary);  /* or var(--success) for section tags */
 ```
-- Hero eyebrow: amber pill badge with border
-- Section tags (`// THE PROBLEM`): teal, no background, `display: block`
+- Hero eyebrow (OSS, "available now"): primary-blue pill badge with border
+- Hosted/SaaS section badge ("beta, not yet launched"): `--warning`/`--warning-dim`
+  instead of `--primary`/`--primary-dim` — the color distinction is intentional,
+  signaling the two offerings are at different availability stages
+- Section tags (`// THE PROBLEM`): success green, no background, `display: block`
+  (hosted section's tag uses `--warning` instead, same reasoning as above)
 
 ### Cards / compare grid
 - `background: var(--border)` on the grid container (creates 1px gap effect)
@@ -63,21 +76,23 @@ color: var(--amber);  /* or var(--teal) for section tags */
 ### Logo mark / beacon dot
 ```css
 border-radius: 50%;
-background: var(--amber);
-box-shadow: 0 0 0 4px var(--amber-dim), 0 0 16px 2px var(--amber);
+background: var(--primary);
+box-shadow: 0 0 0 4px var(--primary-dim), 0 0 16px 2px var(--primary);
 animation: pulse-mark 2.4s ease-in-out infinite;
 ```
 
 ### Buttons (primary)
 ```css
-background: var(--amber);
-color: #14100a;
+background: var(--primary);
+color: #ffffff;
 font-weight: 600;
 border: none;
 border-radius: 8px;
 padding: 13px 22px;
 ```
-Hover: `box-shadow: 0 0 0 4px var(--amber-dim)`
+Hover: `background: var(--primary-hover)` (button text is white since
+`--primary` is a mid-tone blue, not a light hue like the old amber — dark
+text would fail contrast)
 
 ### Form inputs
 ```css
@@ -87,7 +102,7 @@ color: var(--text);
 border-radius: 8px;
 padding: 13px 16px;
 ```
-Focus: `outline: 2px solid var(--amber); outline-offset: 1px`
+Focus: `outline: 2px solid var(--primary); outline-offset: 1px`
 
 ## Theme toggle
 

@@ -1,10 +1,12 @@
-# RunBeacon — Coming Soon Landing Page
+# RunBeacon — Marketing Site
 
 ## Project
-Marketing/waitlist page for Beacon RMM — an open-source, Cloudflare-native RMM
-agent that can also be run as a hosted SaaS. Lives at runbeacon.net. This is
-pre-launch — product itself is not built yet, this is just the landing page +
-waitlist.
+Marketing site for Beacon RMM — an open-source, Cloudflare-native RMM agent
+that has shipped a public beta (self-hostable now via GitHub) and can also be
+run as a hosted SaaS (not yet launched — waitlist only). Lives at
+runbeacon.net. This site will also host the SaaS login for the hosted version
+(separate, in-progress work — not covered by this doc's landing-page sections
+below).
 
 ## Naming conventions (critical — don't mix these up)
 - **Beacon RMM** — the product/brand name. Used everywhere the product is
@@ -20,18 +22,29 @@ waitlist.
 - **rmm.cloud.synertekcs.com** — Synertek's internal Beacon instance. Not
   related to this repo.
 
-## Positioning (established session 2)
+## Positioning (established session 2, restructured session 3)
 The pitch is **no startup commitment**, not "no per-endpoint pricing." Beacon RMM
 hosted will charge per endpoint but with no minimums, no annual contracts, no
 large buy-in. Self-hosting the agent is free forever. The problem with
 incumbents is front-loaded cost and licensing tiers that gate basic features
 before you've proven the business.
 
+**OSS-first structure (session 3):** the hero leads with the open-source
+project — primary CTA is a GitHub link ("Get Beacon on GitHub"), badged
+"PUBLIC BETA — AVAILABLE NOW" since it's genuinely live and self-hostable
+today. The hosted/SaaS cloud offering is a separate, visually distinct
+section further down the page (`--surface-brand` background, `--warning`-
+colored badge reading "BETA — NOT YET LAUNCHED"), and the email waitlist form
+lives only there — OSS users don't need to sign up for anything, they just
+go to GitHub. Don't reintroduce the waitlist form to the hero or blend hosted-
+cloud messaging back into OSS copy; the two offerings are at different
+availability stages and the page should say so clearly.
+
 ## Stack
 - **Framework:** Astro 5 with `@astrojs/cloudflare` adapter (SSR mode for the
   API route, static for the index page)
 - **Styles:** Tailwind CSS v4 (CSS-first config) for layout utilities; all
-  colors via CSS custom properties (`var(--amber)`, `var(--bg)`, etc.)
+  colors via CSS custom properties (`var(--primary)`, `var(--bg)`, etc.)
 - **Fonts:** `@fontsource` packages — Space Grotesk (headings), Inter (body),
   JetBrains Mono (labels/stats/code tags)
 - **Email:** Amazon SES v2 API via `aws4fetch` — SigV4 signing, raw HTTP,
@@ -42,9 +55,11 @@ before you've proven the business.
   (account ID: `8fefd04d62780c1624579795cb08f891`)
 - **Repo:** https://github.com/synertek-cloud-services/runbeacon
 - **Reference design:** `/reference/runbeacon-landing.html` — source of truth
-  for visual design and layout. Kept in sync for naming (Beacon RMM), but its
-  positioning copy predates the session-2 reframe — the live `index.astro`
-  copy is authoritative for messaging, not this file.
+  for visual design and layout. Kept in sync for naming (Beacon RMM) and for
+  colors (matches `global.css` token values), but its positioning copy and
+  section layout predate the session-2 reframe and the session-3 OSS/SaaS
+  split — the live `index.astro` copy and structure are authoritative for
+  messaging, not this file.
 
 ## Infrastructure (fully provisioned)
 - **Pages project:** `runbeacon` on Cloudflare Pages
@@ -76,7 +91,7 @@ src/
   styles/global.css             CSS custom properties (dark/light themes),
                                 @fontsource imports, Tailwind @theme tokens
 public/
-  favicon.svg                   Amber beacon dot SVG
+  favicon.svg                   Primary-blue beacon dot SVG
 schema.sql                      subscribers + engagement_log tables
 wrangler.toml                   Pages config, D1 binding, plain-text vars
 .envrc                          Local Cloudflare creds (gitignored, direnv)
@@ -87,15 +102,19 @@ wrangler.toml                   Pages config, D1 binding, plain-text vars
   `[data-theme="light"]`. Toggle script lives in `Layout.astro` inline
   `<script>`. No localStorage persistence — session only.
 - **Colors:** Never use Tailwind color classes for brand colors. Always
-  reference `var(--amber)`, `var(--teal)`, `var(--bg)`, etc. directly in
-  `<style>` blocks or inline styles.
+  reference `var(--primary)`, `var(--success)`, `var(--warning)`, `var(--bg)`,
+  etc. directly in `<style>` blocks or inline styles. The dark-theme palette
+  matches the Beacon RMM product dashboard's shipped default theme
+  (`beacon/dashboard/src/style.css` + `theme.ts`) 1:1; light-theme values are
+  independently derived (the product itself is dark-only).
 - **SES email pattern:** `AwsClient` from `aws4fetch`, instantiated per-request
   in `subscribe.ts`. Endpoint: `https://email.${AWS_REGION}.amazonaws.com/v2/email/outbound-emails`.
   SES v2 JSON body format. Email failures are non-fatal — subscriber already
   saved in D1 before email attempt.
 - **Email templates:** Use light theme color values hardcoded as inline styles
-  (not CSS vars — email clients don't support them). White background, amber
-  (`#d97a1f`) header/accents, `#5b6470` body text. Safe across all email clients.
+  (not CSS vars — email clients don't support them). White background, primary
+  blue (`#1e47c2`) header/accents, `#5b6470` body text. Safe across all email
+  clients.
 - **Env access:** `(locals as { runtime?: { env?: Env } }).runtime?.env` —
   Cloudflare adapter pattern.
 - **WaitlistForm:** Uses inline styles (not Tailwind classes) to inherit CSS

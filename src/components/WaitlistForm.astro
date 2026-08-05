@@ -19,9 +19,9 @@
     <button
       type="submit"
       id="submitBtn"
-      style="padding:13px 22px; border-radius:8px; border:none; background:var(--amber); color:#14100a; font-weight:600; font-size:14px; cursor:pointer; white-space:nowrap; font-family:inherit;"
+      style="padding:13px 22px; border-radius:8px; border:none; background:var(--primary); color:#ffffff; font-weight:600; font-size:14px; cursor:pointer; white-space:nowrap; font-family:inherit;"
     >
-      Join waitlist
+      Join the beta waitlist
     </button>
   </form>
 
@@ -33,9 +33,9 @@
 
   <div
     id="successMsg"
-    style="display:none; max-width:440px; margin:0 auto; padding:14px 18px; border-radius:8px; background:var(--success-bg); border:1px solid color-mix(in srgb, var(--teal) 35%, transparent); color:var(--teal); font-size:14px; font-weight:500; text-align:center;"
+    style="display:none; max-width:440px; margin:0 auto; padding:14px 18px; border-radius:8px; background:var(--success-bg); border:1px solid color-mix(in srgb, var(--success) 35%, transparent); color:var(--success); font-size:14px; font-weight:500; text-align:center;"
   >
-    You're on the list. We'll email you when Beacon RMM is ready.
+    You're on the hosted beta waitlist. We'll email you when it's ready — and remember, self-hosting is available today on GitHub.
   </div>
 </div>
 
@@ -81,7 +81,7 @@
       errorEl.textContent = message;
       errorEl.style.display = 'block';
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Join waitlist';
+      submitBtn.textContent = 'Join the beta waitlist';
     }
   });
 </script>

@@ -4,8 +4,8 @@ import WaitlistForm from '../components/WaitlistForm.astro';
 ---
 
 <Layout
-  title="Beacon RMM — no startup tax"
-  description="Open-source, Cloudflare-native RMM agent. Self-host free forever on your own infrastructure, or use our hosted cloud with no minimums and no long-term lock-in."
+  title="Beacon RMM — open-source RMM, public beta"
+  description="Open-source, Cloudflare-native RMM agent. Live now — self-host free forever on your own infrastructure. Hosted cloud beta waitlist open."
 >
 
 <!-- ── Nav ──────────────────────────────────────────────────────────────── -->
@@ -34,16 +34,17 @@ import WaitlistForm from '../components/WaitlistForm.astro';
 <section class="hero">
   <div class="radar-field" id="radarField" aria-hidden="true"></div>
   <div class="hero-content">
-    <span class="eyebrow">● COMING SOON — JOIN THE WAITLIST</span>
+    <span class="eyebrow">● PUBLIC BETA — AVAILABLE NOW ON GITHUB</span>
     <h1>RMM that doesn't make you<br><span class="accent">commit before you're ready.</span></h1>
     <p class="sub">
       Beacon RMM is an open-source, Cloudflare-native agent built by an MSP that
       got tired of paying for enterprise licensing before the first client was even
-      onboarded. Self-host it free on your own infrastructure, or use our hosted
-      cloud and pay only for what you're actually running.
+      onboarded. It's live now — install it, read the code, self-host free forever.
     </p>
-    <WaitlistForm />
-    <p class="form-note">Built by an MSP that got tired of paying too. No spam, one email when we launch.</p>
+    <a href="https://github.com/synertek-cloud-services/beacon" class="btn-primary" target="_blank" rel="noopener noreferrer">
+      Get Beacon on GitHub
+    </a>
+    <p class="form-note">MIT licensed. Built by an MSP that got tired of paying too.</p>
   </div>
 </section>
 
@@ -73,8 +74,8 @@ import WaitlistForm from '../components/WaitlistForm.astro';
         Commercial RMM platforms front-load the cost. Licensing tiers, annual
         commitments, per-seat minimums — you're paying enterprise prices before
         you've proven the business. Beacon RMM flips that: run the open-source agent
-        yourself and pay nothing, or use our hosted cloud with no minimums and
-        no long-term lock-in.
+        yourself and pay nothing, or join the waitlist for our hosted cloud beta,
+        launching with no minimums and no long-term lock-in.
       </p>
     </div>
 
@@ -97,7 +98,7 @@ import WaitlistForm from '../components/WaitlistForm.astro';
         <ul class="compare-list">
           <li><span class="mark">✓</span> Self-host free, forever, unlimited endpoints</li>
           <li><span class="mark">✓</span> Open source — read it, fork it, audit it</li>
-          <li><span class="mark">✓</span> Hosted cloud with no minimums or annual contracts</li>
+          <li><span class="mark">✓</span> Hosted cloud (beta waitlist) with no minimums or annual contracts</li>
           <li><span class="mark">✓</span> Your data, your infrastructure, your call</li>
         </ul>
       </div>
@@ -153,6 +154,29 @@ import WaitlistForm from '../components/WaitlistForm.astro';
   </div>
 </section>
 
+<!-- ── Hosted cloud (beta) ───────────────────────────────────────────────── -->
+<section class="hosted-section">
+  <div class="section-inner">
+    <div class="section-head">
+      <span class="section-tag hosted-tag">// HOSTED CLOUD — BETA</span>
+      <span class="eyebrow hosted-badge">● BETA — NOT YET LAUNCHED</span>
+      <h2>Don't want to run the infrastructure yourself?</h2>
+      <p>
+        We're building a hosted version of Beacon RMM — same agent, same open core,
+        but we run the Cloudflare control plane for you. Pay-as-you-grow, no
+        minimums, no annual contract. It's not live yet — join the waitlist and
+        we'll email you the moment the beta opens.
+      </p>
+    </div>
+
+    <WaitlistForm />
+    <p class="form-note">
+      Prefer to run it yourself right now?
+      <a href="https://github.com/synertek-cloud-services/beacon" target="_blank" rel="noopener noreferrer">Get Beacon on GitHub →</a>
+    </p>
+  </div>
+</section>
+
 <!-- ── Footer ────────────────────────────────────────────────────────────── -->
 <footer>
   <div class="foot-left">
@@ -195,15 +219,15 @@ import WaitlistForm from '../components/WaitlistForm.astro';
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: var(--amber);
-    box-shadow: 0 0 0 4px var(--amber-dim), 0 0 16px 2px var(--amber);
+    background: var(--primary);
+    box-shadow: 0 0 0 4px var(--primary-dim), 0 0 16px 2px var(--primary);
     animation: pulse-mark 2.4s ease-in-out infinite;
     flex-shrink: 0;
   }
 
   @keyframes pulse-mark {
-    0%, 100% { box-shadow: 0 0 0 4px var(--amber-dim), 0 0 16px 2px var(--amber); }
-    50%       { box-shadow: 0 0 0 7px var(--amber-dim), 0 0 22px 4px var(--amber); }
+    0%, 100% { box-shadow: 0 0 0 4px var(--primary-dim), 0 0 16px 2px var(--primary); }
+    50%       { box-shadow: 0 0 0 7px var(--primary-dim), 0 0 22px 4px var(--primary); }
   }
 
   .nav-right { display: flex; align-items: center; gap: 18px; }
@@ -272,12 +296,19 @@ import WaitlistForm from '../components/WaitlistForm.astro';
     gap: 8px;
     font-family: var(--font-mono);
     font-size: 12px;
-    color: var(--amber);
-    background: var(--amber-dim);
-    border: 1px solid color-mix(in srgb, var(--amber) 35%, transparent);
+    color: var(--primary);
+    background: var(--primary-dim);
+    border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
     padding: 6px 12px;
     border-radius: 20px;
     margin-bottom: 28px;
+  }
+
+  .eyebrow.hosted-badge {
+    color: var(--warning);
+    background: var(--warning-dim);
+    border-color: color-mix(in srgb, var(--warning) 35%, transparent);
+    margin-bottom: 14px;
   }
 
   .hero h1 {
@@ -289,7 +320,7 @@ import WaitlistForm from '../components/WaitlistForm.astro';
     margin-bottom: 22px;
   }
 
-  .hero h1 .accent { color: var(--amber); }
+  .hero h1 .accent { color: var(--primary); }
 
   .hero p.sub {
     font-size: clamp(16px, 2vw, 19px);
@@ -299,10 +330,28 @@ import WaitlistForm from '../components/WaitlistForm.astro';
     line-height: 1.6;
   }
 
+  .btn-primary {
+    display: inline-block;
+    padding: 13px 26px;
+    border-radius: 8px;
+    background: var(--primary);
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 15px;
+    transition: background 0.15s;
+  }
+
+  .btn-primary:hover { background: var(--primary-hover); }
+
   .form-note {
     font-size: 12.5px;
     color: var(--text-faint);
     margin-top: 14px;
+  }
+
+  .form-note a {
+    color: var(--primary);
+    text-decoration: underline;
   }
 
   /* ── Stat strip ───────────────────────────────────────────────────────── */
@@ -318,7 +367,7 @@ import WaitlistForm from '../components/WaitlistForm.astro';
   .stat-num {
     font-family: var(--font-mono);
     font-size: 26px;
-    color: var(--amber);
+    color: var(--primary);
     font-weight: 500;
   }
 
@@ -341,10 +390,12 @@ import WaitlistForm from '../components/WaitlistForm.astro';
   .section-tag {
     font-family: var(--font-mono);
     font-size: 12px;
-    color: var(--teal);
+    color: var(--success);
     margin-bottom: 14px;
     display: block;
   }
+
+  .section-tag.hosted-tag { color: var(--warning); }
 
   .section-head h2 {
     font-family: var(--font-display);
@@ -379,7 +430,7 @@ import WaitlistForm from '../components/WaitlistForm.astro';
     color: var(--text-faint);
     margin-bottom: 18px;
   }
-  .compare-col.highlight .compare-label { color: var(--amber); }
+  .compare-col.highlight .compare-label { color: var(--primary); }
 
   .compare-price {
     font-family: var(--font-mono);
@@ -407,7 +458,7 @@ import WaitlistForm from '../components/WaitlistForm.astro';
 
   .compare-list li .mark { flex-shrink: 0; margin-top: 2px; }
 
-  .compare-col.highlight .compare-list li .mark { color: var(--teal); }
+  .compare-col.highlight .compare-list li .mark { color: var(--success); }
   .compare-col:not(.highlight) .compare-list li .mark { color: var(--text-faint); }
 
   /* ── Pillars ──────────────────────────────────────────────────────────── */
@@ -429,8 +480,8 @@ import WaitlistForm from '../components/WaitlistForm.astro';
     width: 34px;
     height: 34px;
     border-radius: 8px;
-    background: var(--amber-dim);
-    color: var(--amber);
+    background: var(--primary-dim);
+    color: var(--primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -447,6 +498,15 @@ import WaitlistForm from '../components/WaitlistForm.astro';
   }
 
   .pillar p { font-size: 14.5px; color: var(--text-dim); line-height: 1.6; }
+
+  /* ── Hosted cloud (beta) ──────────────────────────────────────────────── */
+  .hosted-section {
+    background: var(--surface-brand);
+    text-align: center;
+  }
+
+  .hosted-section .section-inner { max-width: 620px; }
+  .hosted-section .section-head { margin-bottom: 32px; margin-left: auto; margin-right: auto; }
 
   /* ── Footer ───────────────────────────────────────────────────────────── */
   footer {
