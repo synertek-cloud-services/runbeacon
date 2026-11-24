@@ -36,10 +36,9 @@ import Layout from '../layouts/Layout.astro';
     <span class="section-tag">// SELF-HOSTING COST</span>
     <h1>How far does Cloudflare's free tier take you?</h1>
     <p class="sub">
-      Beacon RMM's agent checks in every 60 seconds. Every check-in costs a
-      little bit of Cloudflare Workers and D1 usage. Drag the slider to see
-      exactly where your fleet lands — the math below is traced directly from
-      the <a href="https://github.com/synertek-cloud-services/beacon" target="_blank" rel="noopener noreferrer">open-source code</a>,
+      Every Beacon RMM agent check-in costs a little bit of Cloudflare Workers
+      and D1 usage. Drag the slider to see where your fleet lands — the math
+      below is traced directly from the <a href="https://github.com/synertek-cloud-services/beacon" target="_blank" rel="noopener noreferrer">open-source code</a>,
       not a guess.
     </p>
   </div>
@@ -53,6 +52,10 @@ import Layout from '../layouts/Layout.astro';
         <label for="endpointRange">Monitored endpoints</label>
         <input type="number" id="endpointCount" min="1" max="5000" value="50" />
       </div>
+      <label class="calc-toggle">
+        <input type="checkbox" id="instantPush" checked />
+        <span>Agent v0.4.1+ with instant push <em>(default; uncheck for older agents that poll every 60 seconds)</em></span>
+      </label>
       <input type="range" id="endpointRange" min="1" max="1000" value="50" step="1" />
       <div class="calc-range-labels">
         <span>1</span>
@@ -96,32 +99,52 @@ import Layout from '../layouts/Layout.astro';
       <summary>How this is calculated</summary>
       <div class="calc-methodology-body">
         <p>
-          Beacon's agent checks in every <strong>60 seconds</strong> —
-          1,440 times per device per day, hardcoded in
-          <code>agent/cmd/agent/main.go</code>. Each check-in is traced
-          through the Worker's <code>/v1/checkin</code> route to:
+          With <strong>instant push</strong> (agent v0.4.1+, the default), each
+          agent keeps one idle WebSocket open to a per-device Durable Object.
+          The server uses it to wake the agent the moment you open a remote
+          session or send a command, so the agent only needs to check in on
+          its own every <strong>4 minutes</strong> (360 times a day) to refresh
+          metrics. Older agents, or an agent whose socket has dropped, poll
+          every <strong>60 seconds</strong> (1,440 times a day). Each check-in
+          (<code>worker/src/routes/checkin.ts</code>) is:
         </p>
         <ul>
           <li>1 Cloudflare Workers request</li>
-          <li>1 D1 row write (updating the device's last-seen status), every time</li>
-          <li>~13 D1 row reads (looking up maintenance windows, alert policies, and queued commands) — this is a floor for an idle, lightly-configured device; more active alert monitors or pending commands read more rows</li>
-          <li>0 Durable Object calls — check-ins don't touch Durable Objects at all in this codebase (those are only used for interactive remote-session relaying, a separate feature you use on demand)</li>
+          <li>1 D1 row write (the device's last-seen status and latest metrics)</li>
+          <li>up to ~13 D1 row reads — a conservative ceiling used here; a quiet check-in reads far fewer, but reads are the limit you are least likely to hit</li>
         </ul>
         <p>
-          On top of that, each device makes two more Worker requests a day
-          (a software/patch audit and an update check), and the control
-          plane runs a scheduled job every 2 minutes regardless of fleet
-          size (720 requests/day), which also re-reads every device once
-          per tick to evaluate offline alerts.
+          Instant push adds about 48 WebSocket connects per device per day
+          (counted here as Worker requests; a connection drops and
+          re-establishes roughly every 30–60 minutes on a good network, more
+          often on a flaky one). Idle keep-alive pings are answered by
+          Cloudflare without waking the Durable Object, so they cost nothing.
+          Durable Object usage stays around 50 requests per device per day,
+          well inside its own free allowance until you reach roughly 2,000
+          devices. On top of that, each device makes two more Worker requests a
+          day (a software/patch audit and an update check), and the control
+          plane runs a scheduled job every 2 minutes regardless of fleet size
+          (720 requests/day). That job evaluates offline and CPU/memory/disk/
+          antivirus alerts for every device from the metrics the last check-in
+          stored.
         </p>
         <p>
           Compared against Cloudflare's current published free-tier limits
           (100,000 Workers requests/day, 100,000 D1 row writes/day, 5,000,000
-          D1 row reads/day), Workers requests and D1 writes are the first
-          limits you'll hit — both land around the same fleet size. Past
-          that, this estimates the monthly cost on Cloudflare's $5/month
-          Workers Paid plan, which includes 10M requests and 50M D1 writes
-          before any usage-based overage kicks in.
+          D1 row reads/day), Workers requests are the first limit you'll hit,
+          with D1 writes close behind. Past that, this estimates the monthly
+          cost on Cloudflare's $5/month Workers Paid plan, which includes 10M
+          requests and 50M D1 writes before any usage-based overage kicks in.
+        </p>
+        <p>
+          <strong>CPU time</strong> is a per-request limit rather than a daily
+          total, so it isn't a bar above: the free plan allows 10 ms of CPU per
+          request. A typical check-in measures about 2 ms (median, from
+          Cloudflare's own analytics on a real deployment); a check-in that
+          also reports command results or has many agent-measured monitors
+          assigned uses more. This was the real free-tier problem in earlier
+          versions (about 9 ms median) and is why alert evaluation now runs on
+          the scheduled job instead of inside each check-in.
         </p>
         <p>
           This is an estimate, not a guarantee — your actual read volume
@@ -283,6 +306,18 @@ import Layout from '../layouts/Layout.astro';
     text-align: right;
   }
 
+  .calc-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13.5px;
+    color: var(--text);
+    margin-bottom: 16px;
+    cursor: pointer;
+  }
+  .calc-toggle input { margin-top: 3px; accent-color: var(--primary); }
+  .calc-toggle em { color: var(--text-faint); font-style: normal; }
+
   #endpointRange {
     width: 100%;
     accent-color: var(--primary);
@@ -424,7 +459,9 @@ import Layout from '../layouts/Layout.astro';
 
 <script>
   // ── Grounded in agent/cmd/agent/main.go and worker/src/routes/checkin.ts ──
-  const CHECKINS_PER_DAY = 1440; // 60s interval
+  const CHECKINS_PER_DAY_POLLING = 1440; // 60s interval (no instant push)
+  const CHECKINS_PER_DAY_PUSH = 360; // 4-minute poll while the wake socket is up
+  const WS_CONNECTS_PER_DAY = 48; // wake-socket (re)connects, each one a Worker request
   const D1_READS_PER_CHECKIN = 13;
   const DAILY_EXTRA_WORKER_REQ_PER_ENDPOINT = 2; // audit + update check
   const CRON_BASELINE_WORKER_REQ_PER_DAY = 720; // */2 * * * * cron, fleet-independent
@@ -442,10 +479,12 @@ import Layout from '../layouts/Layout.astro';
   const D1_PAID_INCLUDED_READS_MONTH = 25_000_000_000;
   const D1_PAID_OVERAGE_PER_MILLION_READ = 0.001;
 
-  function compute(endpoints: number) {
-    const workerReqDay = endpoints * (CHECKINS_PER_DAY + DAILY_EXTRA_WORKER_REQ_PER_ENDPOINT) + CRON_BASELINE_WORKER_REQ_PER_DAY;
-    const d1WritesDay = endpoints * CHECKINS_PER_DAY;
-    const d1ReadsDay = endpoints * (CHECKINS_PER_DAY * D1_READS_PER_CHECKIN + CRON_OFFLINE_ALERT_READ_PER_ENDPOINT_PER_DAY);
+  function compute(endpoints: number, instantPush: boolean) {
+    const checkins = instantPush ? CHECKINS_PER_DAY_PUSH : CHECKINS_PER_DAY_POLLING;
+    const wsConnects = instantPush ? WS_CONNECTS_PER_DAY : 0;
+    const workerReqDay = endpoints * (checkins + wsConnects + DAILY_EXTRA_WORKER_REQ_PER_ENDPOINT) + CRON_BASELINE_WORKER_REQ_PER_DAY;
+    const d1WritesDay = endpoints * checkins;
+    const d1ReadsDay = endpoints * (checkins * D1_READS_PER_CHECKIN + CRON_OFFLINE_ALERT_READ_PER_ENDPOINT_PER_DAY);
 
     const withinFree = workerReqDay <= WORKERS_FREE_REQ_DAY && d1WritesDay <= D1_FREE_WRITES_DAY && d1ReadsDay <= D1_FREE_READS_DAY;
 
@@ -479,6 +518,7 @@ import Layout from '../layouts/Layout.astro';
 
   const countInput = document.getElementById('endpointCount') as HTMLInputElement;
   const rangeInput = document.getElementById('endpointRange') as HTMLInputElement;
+  const pushInput = document.getElementById('instantPush') as HTMLInputElement;
   const verdictEl = document.getElementById('calcVerdict') as HTMLElement;
   const verdictBadge = document.getElementById('verdictBadge') as HTMLElement;
   const verdictText = document.getElementById('verdictText') as HTMLElement;
@@ -491,7 +531,7 @@ import Layout from '../layouts/Layout.astro';
   const readsBar = document.getElementById('metricReadsBar') as HTMLElement;
 
   function render(endpoints: number) {
-    const r = compute(endpoints);
+    const r = compute(endpoints, pushInput.checked);
 
     workerText.textContent = `${fmt(r.workerReqDay)} / ${fmt(WORKERS_FREE_REQ_DAY)}`;
     workerBar.style.width = `${pct(r.workerReqDay, WORKERS_FREE_REQ_DAY)}%`;
@@ -522,6 +562,7 @@ import Layout from '../layouts/Layout.astro';
 
   countInput.addEventListener('input', () => setEndpoints(Number(countInput.value) || 1));
   rangeInput.addEventListener('input', () => setEndpoints(Number(rangeInput.value)));
+  pushInput.addEventListener('change', () => setEndpoints(Number(countInput.value) || 1));
 
   render(Number(countInput.value));
 </script>
