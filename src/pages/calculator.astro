@@ -147,6 +147,27 @@ import Layout from '../layouts/Layout.astro';
           the scheduled job instead of inside each check-in.
         </p>
         <p>
+          <strong>Load-tested.</strong> We ran the current Worker on a real
+          deployed Beacon with 2,000 simulated devices in a single D1
+          database. Check-ins at up to 100 per second, sustained, all
+          succeeded (about 130 ms median, ~2.5 ms of Worker CPU each), and
+          the 2-minute scheduled job finished in about a second (median)
+          at that size. That is roughly what a 6,000-device fleet polling
+          every minute would generate, so a single database is not the
+          limit for the small fleets this page is about. Two caveats: the
+          traffic was simulated from one machine, not real agents, and a
+          sudden burst of more than ~150 check-ins per second (every agent
+          reconnecting in the same second after an outage, say) makes D1
+          reject some requests as "overloaded" — agents simply retry on
+          their next check-in.
+        </p>
+        <p>
+          The same test found that older Beacon Workers stop running their
+          scheduled jobs (alerts, scheduled jobs and patch policies) once a
+          fleet passes roughly 90 devices. This is fixed in current Beacon;
+          if you self-host an older copy, update before you grow past that.
+        </p>
+        <p>
           This is an estimate, not a guarantee — your actual read volume
           depends on how many alert monitors and maintenance policies you
           configure. It doesn't include storage costs, which stay
